@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, FileSpreadsheet, Fish, Home, LogOut, Menu, Package, Plus, Printer, Search, ShoppingBasket, ShoppingCart, Trash2, TrendingUp, UsersRound, WalletCards, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, FileSpreadsheet, Fish, Home, LogOut, Menu, Moon, Package, Plus, Printer, Search, ShoppingBasket, ShoppingCart, Sun, Trash2, TrendingUp, UsersRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 type Section = "resumen"|"compras"|"ventas"|"inventario"|"clientes"|"proveedores"|"cobrar"|"pagar";
@@ -59,6 +59,18 @@ export default function App(){
   const [inventoryProductId,setInventoryProductId]=useState<string|null>(null);
   const [loading,setLoading]=useState(true); const [toast,setToast]=useState("");
   
+  // Dark Mode support
+  const [darkMode, setDarkMode] = useState(false);
+  useEffect(() => {
+    const isDark = localStorage.getItem("cj-dark") === "true";
+    setDarkMode(isDark);
+  }, []);
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    localStorage.setItem("cj-dark", String(next));
+    setDarkMode(next);
+  };
+  
   useEffect(()=>{void Promise.resolve().then(()=>{const t=localStorage.getItem("cj-token")||"";const u=localStorage.getItem("cj-user")||"";if(!t){setLoading(false);return}setToken(t);setUser(u);void load(t)})},[]);
   
   async function load(t=token){const r=await fetch("/api/data",{headers:{authorization:`Bearer ${t}`}});if(!r.ok){localStorage.clear();setToken("");setLoading(false);return}const d=await r.json();if(d.state)setState(d.state);setLoading(false)}
@@ -108,14 +120,36 @@ export default function App(){
   const totals={sales:sales.reduce((s,m)=>s+m.total,0),purchases:purchases.reduce((s,m)=>s+m.total,0),receivable,payable};
   const titles:Record<Section,string>={resumen:"Resumen del negocio",compras:"Compras",ventas:"Ventas",inventario:"Inventario",clientes:"Clientes",proveedores:"Proveedores",cobrar:"Cuentas por cobrar",pagar:"Cuentas por pagar"};
   
-  return <div className="app-shell">
+  return <div className={`app-shell ${darkMode ? "dark" : ""}`}>
     <aside className={`sidebar ${menu?"open":""}`}><Brand/><button className="icon-button close-menu" onClick={()=>setMenu(false)}><X/></button><nav>
       <p className="nav-label">GESTIÓN COMERCIAL</p>{nav.map(([id,label,Icon])=><button key={id} className={active===id?"active":""} onClick={()=>{setActive(id);setMenu(false)}}><Icon size={19}/>{label}</button>)}
-    </nav><div className="sidebar-user"><span className="avatar">{user.slice(0,2).toUpperCase()}</span><div><strong>{user}</strong><small>Administrador</small></div><button className="icon-button" onClick={logout} title="Cerrar sesión"><LogOut size={17}/></button></div></aside>
+    </nav>
+    <div className="sidebar-user">
+      <span className="avatar">{user.slice(0,2).toUpperCase()}</span>
+      <div><strong>{user}</strong><small>Administrador</small></div>
+      <div style={{display: "flex", gap: "6px", marginLeft: "auto"}}>
+        <button className="icon-button" onClick={toggleDarkMode} title="Cambiar tema" style={{width:"32px", height:"32px", borderRadius:"8px"}}>
+          {darkMode ? <Sun size={15}/> : <Moon size={15}/>}
+        </button>
+        <button className="icon-button" onClick={logout} title="Cerrar sesión" style={{width:"32px", height:"32px", borderRadius:"8px"}}>
+          <LogOut size={15}/>
+        </button>
+      </div>
+    </div>
+    </aside>
     {menu&&<button className="menu-backdrop" onClick={()=>setMenu(false)}/>}
     
     <main className="main-content">
-      <header className="mobile-header"><button className="icon-button" onClick={()=>setMenu(true)}><Menu/></button><Brand/><button className="mobile-add" onClick={()=>setModal("Venta")}><Plus/></button></header>
+      <header className="mobile-header">
+        <button className="icon-button" onClick={()=>setMenu(true)}><Menu/></button>
+        <Brand/>
+        <div style={{display: "flex", gap: "8px"}}>
+          <button className="icon-button" onClick={toggleDarkMode} title="Cambiar tema">
+            {darkMode ? <Sun size={18}/> : <Moon size={18}/>}
+          </button>
+          <button className="mobile-add" onClick={()=>setModal("Venta")}><Plus/></button>
+        </div>
+      </header>
       <section className="page-header">
         <div>
           {active!=="resumen"&&<button className="home-return" onClick={()=>setActive("resumen")}><Home size={20}/>Volver al inicio</button>}
