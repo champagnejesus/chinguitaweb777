@@ -64,11 +64,21 @@ export default function App(){
   useEffect(() => {
     const isDark = localStorage.getItem("cj-dark") === "true";
     setDarkMode(isDark);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, []);
   const toggleDarkMode = () => {
     const next = !darkMode;
     localStorage.setItem("cj-dark", String(next));
     setDarkMode(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   };
   
   useEffect(()=>{void Promise.resolve().then(()=>{const t=localStorage.getItem("cj-token")||"";const u=localStorage.getItem("cj-user")||"";if(!t){setLoading(false);return}setToken(t);setUser(u);void load(t)})},[]);
