@@ -55,7 +55,7 @@ function exportPdf(title:string,rows:ExportRow[]){
 export default function App(){
   const [token,setToken]=useState(""); const [user,setUser]=useState(""); const [state,setState]=useState<State>(emptyState);
   const [active,setActive]=useState<Section>("resumen"); const [menu,setMenu]=useState(false); 
-  const [modal,setModal]=useState<"Compra"|"Venta"|"Cliente"|"Proveedor"|"Pago"|"Ajuste"|"EditProducto"|"EditCliente"|"EditProveedor"|null>(null);
+  const [modal,setModal]=useState<"Compra"|"Venta"|"Cliente"|"Proveedor"|"Pago"|"Ajuste"|"EditProducto"|"EditCliente"|"EditProveedor"|"EditMovimiento"|null>(null);
   const [selectedItem,setSelectedItem]=useState<any>(null);
   const [inventoryProductId,setInventoryProductId]=useState<string|null>(null);
   const [loading,setLoading]=useState(true); const [toast,setToast]=useState("");
@@ -240,14 +240,12 @@ export default function App(){
           <p>Sesión de {user}</p>
         </div>
         <div className="header-actions">
-          {active==="ventas"&&<button className="primary-button" onClick={()=>setModal("Venta")}><Plus/>Nueva venta</button>}
-          {active==="compras"&&<button className="primary-button" onClick={()=>setModal("Compra")}><Plus/>Nueva compra</button>}
           {active==="inventario"&&<button className="primary-button" onClick={()=>{setSelectedItem(null); setModal("Ajuste");}}><Plus/>Ajustar Stock</button>}
         </div>
       </section>
       
-      {active==="resumen"&&<Dashboard totals={totals} state={state} onNavigate={setActive} onOpenProduct={id=>{setInventoryProductId(id);setActive("inventario")}} onDeleteMovement={deleteMovement}/>}
-      {(active==="ventas"||active==="compras")&&<Movements kind={active==="ventas"?"Venta":"Compra"} state={state} onNew={()=>setModal(active==="ventas"?"Venta":"Compra")} onDeleteMovement={deleteMovement}/>}
+      {active==="resumen"&&<Dashboard totals={totals} state={state} onNavigate={setActive} onOpenProduct={id=>{setInventoryProductId(id);setActive("inventario")}}/>}
+      {(active==="ventas"||active==="compras")&&<Movements kind={active==="ventas"?"Venta":"Compra"} state={state} onNew={()=>setModal(active==="ventas"?"Venta":"Compra")} onDeleteMovement={deleteMovement} onEditMovement={m=>{setSelectedItem(m);setModal("EditMovimiento")}}/>}
       {active==="inventario"&&<Inventory state={state} selectedProductId={inventoryProductId} onSelectProduct={setInventoryProductId} onEditProduct={p=>{setSelectedItem(p);setModal("EditProducto")}} onDeleteMovement={deleteMovement}/>}
       {(active==="clientes"||active==="proveedores")&&<Directory kind={active==="clientes"?"Cliente":"Proveedor"} rows={active==="clientes"?state.clients:state.providers} onNew={()=>setModal(active==="clientes"?"Cliente":"Proveedor")} onEdit={p=>{setSelectedItem(p);setModal(active==="clientes"?"EditCliente":"EditProveedor")}} onDelete={id=>deleteParty(id, active==="clientes"?"Cliente":"Proveedor")}/>}
       {(active==="cobrar"||active==="pagar")&&<Accounts kind={active==="cobrar"?"Venta":"Compra"} state={state} onPay={()=>setModal("Pago")} onDeleteMovement={deleteMovement}/>}
@@ -295,7 +293,7 @@ function movementRows(rows:Movement[],state:State,kind:Movement["kind"]):ExportR
 function activityRows(rows:Movement[],state:State):ExportRow[]{return rows.map(m=>({Fecha:m.date,"Cliente / Proveedor / Motivo":partyName(m,state),Producto:`${productName(m,state)} · ${m.quantity} ${m.unit}`,"Forma de pago":m.paymentMethod,Total:money(m.total),Abono:money(m.paid),Saldo:money(m.total-m.paid)}))}
 function accountRows(rows:Movement[],state:State,kind:"Compra"|"Venta"):ExportRow[]{return rows.map(m=>({Fecha:m.date,[kind==="Compra"?"Proveedor":"Cliente"]:partyName(m,state),Producto:`${productName(m,state)} · ${m.quantity} ${m.unit}`,"Forma de pago":m.paymentMethod,Total:money(m.total),Abono:money(m.paid),Saldo:money(m.total-m.paid),Usuario:m.user}))}
 
-function Dashboard({totals,state,onNavigate,onOpenProduct,onDeleteMovement}:{totals:Record<string,number>;state:State;onNavigate:(section:Section)=>void;onOpenProduct:(id:string)=>void;onDeleteMovement:(id:string)=>void}){
+function Dashboard({totals,state,onNavigate,onOpenProduct}:{totals:Record<string,number>;state:State;onNavigate:(section:Section)=>void;onOpenProduct:(id:string)=>void}){
   const cards:[string,number,typeof ShoppingCart,string,Section][]=[
     ["Ventas",totals.sales,ShoppingCart,"teal","ventas"],
     ["Compras",totals.purchases,ShoppingBasket,"blue","compras"],
@@ -306,15 +304,15 @@ function Dashboard({totals,state,onNavigate,onOpenProduct,onDeleteMovement}:{tot
   return <><section className="metric-grid">{cards.map(([label,value,Icon,tone,target])=><button type="button" className="metric-card" key={label} onClick={()=>onNavigate(target)} aria-label={`Abrir módulo ${label}`}>
     <div className={`metric-icon ${tone}`}><Icon size={28}/></div><div className="metric-label">{label}<ArrowRight className="metric-arrow" size={20}/></div><strong>{money(value)}</strong><p>Ver movimientos y detalle</p>
   </button>)}</section>
-  <section className="dashboard-stack"><article className="surface recent-surface"><div className="surface-title"><div><p className="eyebrow">ÚLTIMOS MOVIMIENTOS</p><h2>Actividad reciente</h2></div><div className="surface-actions"><ExportActions title="Actividad-reciente" rows={report}/>{state.movements.length>0&&<button className="text-button" onClick={()=>onNavigate(state.movements[0].kind==="Venta"?"ventas":"compras")}>Ver detalle <ArrowRight size={16}/></button>}</div></div><RecentMovements rows={state.movements.slice(0,8)} state={state} onDeleteMovement={onDeleteMovement}/></article>
-  <article className="surface alert-panel"><div className="surface-title"><div><p className="eyebrow coral-text">INVENTARIO</p><h2><AlertTriangle/>Alertas de stock</h2></div><button className="text-button" onClick={()=>{onOpenProduct("");onNavigate("inventario")}}>Ver inventario <ArrowRight size={16}/></button></div><div className="stock-alerts">{state.products.filter(p=>productValue(p,"unidad","stock")<=productValue(p,"unidad","minimum")||productValue(p,"caja","stock")<=productValue(p,"caja","minimum")).map(p=><button className="stock-alert" key={p.id} onClick={()=>onOpenProduct(p.id)}><div><strong>{p.name}</strong><small>Ver solamente este producto</small></div><span>{productValue(p,"unidad","stock")} un. · {productValue(p,"caja","stock")} cj.</span><ArrowRight size={18}/></button>)}{!state.products.some(p=>productValue(p,"unidad","stock")<=productValue(p,"unidad","minimum")||productValue(p,"caja","stock")<=productValue(p,"caja","minimum"))&&<p className="empty-mini">Sin alertas</p>}</div></article></section></>;
+  <section className="dashboard-stack"><article className="surface recent-surface"><div className="surface-title"><div><p className="eyebrow">ÚLTIMOS MOVIMIENTOS</p><h2>Actividad reciente</h2></div><div className="surface-actions"><ExportActions title="Actividad-reciente" rows={report}/>{state.movements.length>0&&<button className="text-button" onClick={()=>onNavigate(state.movements[0].kind==="Venta"?"ventas":"compras")}>Ver detalle <ArrowRight size={16}/></button>}</div></div><RecentMovements rows={state.movements.slice(0,8)} state={state}/></article>
+  <article className="surface alert-panel"><div className="surface-title"><div><p className="eyebrow coral-text">INVENTARIO</p><h2><AlertTriangle/>Alertas de stock</h2></div><button className="text-button" onClick={()=>{onOpenProduct("");onNavigate("inventario")}}>Ver inventario <ArrowRight size={16}/></button></div><div className="stock-alerts">{state.products.filter(p=>productValue(p,"unidad","stock")<=productValue(p,"unidad","minimum")||productValue(p,"caja","stock")<=productValue(p,"caja","minimum")).map(p=><button className="stock-alert" key={p.id} onClick={()=>onOpenProduct(p.id)}><div><strong>{p.name}</strong><small>Gestionar stock</small></div><span>{productValue(p,"unidad","stock")} un. · {productValue(p,"caja","stock")} cj.</span><ArrowRight size={18}/></button>)}{!state.products.some(p=>productValue(p,"unidad","stock")<=productValue(p,"unidad","minimum")||productValue(p,"caja","stock")<=productValue(p,"caja","minimum"))&&<p className="empty-mini">Sin alertas</p>}</div></article></section></>;
 }
 
-function RecentMovements({rows,state,onDeleteMovement}:{rows:Movement[];state:State;onDeleteMovement:(id:string)=>void}){
-  return <div className="responsive-table recent-table"><table><thead><tr><th>Fecha</th><th>Cliente / Prov / Motivo</th><th>Producto</th><th>Forma de pago</th><th>Total</th><th>Abono</th><th>Saldo</th><th>Acciones</th></tr></thead><tbody>{rows.map(m=><tr key={m.id}><td data-label="Fecha">{m.date}</td><td data-label="Cliente / Prov / Motivo"><strong>{partyName(m,state)}</strong></td><td data-label="Producto">{productName(m,state)} · {m.quantity} {m.unit}</td><td data-label="Forma de pago">{m.paymentMethod}</td><td data-label="Total"><strong>{m.kind==="Ajuste"?"—":money(m.total)}</strong></td><td data-label="Abono">{m.kind==="Ajuste"?"—":money(m.paid)}</td><td data-label="Saldo">{m.kind==="Ajuste"?"—":<span className={`status ${m.total-m.paid<=0?"paid":"pending"}`}>{money(m.total-m.paid)}</span>}</td><td data-label="Acciones"><button className="icon-button danger-icon-button" onClick={()=>onDeleteMovement(m.id)} title="Eliminar"><Trash2 size={16}/></button></td></tr>)}{!rows.length&&<tr><td colSpan={8} className="empty-state">Aún no hay movimientos.</td></tr>}</tbody></table></div>;
+function RecentMovements({rows,state}:{rows:Movement[];state:State}){
+  return <div className="responsive-table recent-table"><table><thead><tr><th>Fecha</th><th>Cliente / Prov / Motivo</th><th>Producto</th><th>Forma de pago</th><th>Total</th><th>Abono</th><th>Saldo</th></tr></thead><tbody>{rows.map(m=><tr key={m.id}><td data-label="Fecha">{m.date}</td><td data-label="Cliente / Prov / Motivo"><strong>{partyName(m,state)}</strong></td><td data-label="Producto">{productName(m,state)} · {m.quantity} {m.unit}</td><td data-label="Forma de pago">{m.paymentMethod}</td><td data-label="Total"><strong>{m.kind==="Ajuste"?"—":money(m.total)}</strong></td><td data-label="Abono">{m.kind==="Ajuste"?"—":money(m.paid)}</td><td data-label="Saldo">{m.kind==="Ajuste"?"—":<span className={`status ${m.total-m.paid<=0?"paid":"pending"}`}>{money(m.total-m.paid)}</span>}</td></tr>)}{!rows.length&&<tr><td colSpan={7} className="empty-state">Aún no hay movimientos.</td></tr>}</tbody></table></div>;
 }
 
-function Movements({kind,state,onNew,onDeleteMovement}:{kind:"Compra"|"Venta";state:State;onNew:()=>void;onDeleteMovement:(id:string)=>void}){
+function Movements({kind,state,onNew,onDeleteMovement,onEditMovement}:{kind:"Compra"|"Venta";state:State;onNew:()=>void;onDeleteMovement:(id:string)=>void;onEditMovement:(m:Movement)=>void}){
   const rows=state.movements.filter(m=>m.kind===kind);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -353,13 +351,13 @@ function Movements({kind,state,onNew,onDeleteMovement}:{kind:"Compra"|"Venta";st
       </div>
     </div>
 
-    <MovementTable rows={filteredRows} state={state} kind={kind} onDeleteMovement={onDeleteMovement}/>
+    <MovementTable rows={filteredRows} state={state} kind={kind} onDeleteMovement={onDeleteMovement} onEditMovement={onEditMovement}/>
   </section>;
 }
 
-function MovementTable({rows,state,kind,onDeleteMovement}:{rows:Movement[];state:State;kind:"Compra"|"Venta";onDeleteMovement:(id:string)=>void}){
+function MovementTable({rows,state,kind,onDeleteMovement,onEditMovement}:{rows:Movement[];state:State;kind:"Compra"|"Venta";onDeleteMovement:(id:string)=>void;onEditMovement:(m:Movement)=>void}){
   const partyLabel=kind==="Compra"?"Proveedor":"Cliente";
-  return <div className="responsive-table"><table><thead><tr><th>Fecha</th><th>{partyLabel}</th><th>Producto</th><th>Forma de pago</th><th>Total</th><th>Abono</th><th>Saldo</th><th>Acciones</th></tr></thead><tbody>{rows.map(m=><tr key={m.id}><td data-label="Fecha">{m.date}</td><td data-label={partyLabel}><strong>{partyName(m,state)}</strong></td><td data-label="Producto">{productName(m,state)} · {m.quantity} {m.unit}</td><td data-label="Forma de pago">{m.paymentMethod}</td><td data-label="Total"><strong>{money(m.total)}</strong></td><td data-label="Abono">{money(m.paid)}</td><td data-label="Saldo"><span className={`status ${m.total-m.paid<=0?"paid":"pending"}`}>{money(m.total-m.paid)}</span></td><td data-label="Acciones"><button className="icon-button danger-icon-button" onClick={()=>onDeleteMovement(m.id)} title="Eliminar"><Trash2 size={16}/></button></td></tr>)}{!rows.length&&<tr><td colSpan={8} className="empty-state">Aún no hay registros.</td></tr>}</tbody></table></div>;
+  return <div className="responsive-table"><table><thead><tr><th>Fecha</th><th>{partyLabel}</th><th>Producto</th><th>Forma de pago</th><th>Total</th><th>Abono</th><th>Saldo</th><th>Acciones</th></tr></thead><tbody>{rows.map(m=><tr key={m.id}><td data-label="Fecha">{m.date}</td><td data-label={partyLabel}><strong>{partyName(m,state)}</strong></td><td data-label="Producto">{productName(m,state)} · {m.quantity} {m.unit}</td><td data-label="Forma de pago">{m.paymentMethod}</td><td data-label="Total"><strong>{money(m.total)}</strong></td><td data-label="Abono">{money(m.paid)}</td><td data-label="Saldo"><span className={`status ${m.total-m.paid<=0?"paid":"pending"}`}>{money(m.total-m.paid)}</span></td><td data-label="Acciones" style={{whiteSpace:"nowrap"}}><button className="icon-button danger-icon-button" onClick={()=>onDeleteMovement(m.id)} title="Eliminar"><Trash2 size={16}/></button><button className="text-button edit-link" onClick={()=>onEditMovement(m)} title="Editar">editar</button></td></tr>)}{!rows.length&&<tr><td colSpan={8} className="empty-state">Aún no hay registros.</td></tr>}</tbody></table></div>;
 }
 
 function Inventory({state,selectedProductId,onSelectProduct,onEditProduct,onDeleteMovement}:{state:State;selectedProductId:string|null;onSelectProduct:(id:string|null)=>void;onEditProduct:(p:Product)=>void;onDeleteMovement:(id:string)=>void}){
@@ -533,13 +531,15 @@ function partyName(m:Movement,s:State){
 }
 function productName(m:Movement,s:State){return s.products.find(p=>p.id===m.productId)?.name||"Producto"}
 
-function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Venta"|"Cliente"|"Proveedor"|"Pago"|"Ajuste"|"EditProducto"|"EditCliente"|"EditProveedor";state:State;user:string;selectedItem:any;onClose:()=>void;onSave:(s:State, action:string, details?:string)=>void}){
-  const [productId,setProductId]=useState(state.products[0]?.id||"");
+function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Venta"|"Cliente"|"Proveedor"|"Pago"|"Ajuste"|"EditProducto"|"EditCliente"|"EditProveedor"|"EditMovimiento";state:State;user:string;selectedItem:any;onClose:()=>void;onSave:(s:State, action:string, details?:string)=>void}){
+  const isMovementEdit = kind === "EditMovimiento";
+  const editKind = isMovementEdit ? selectedItem.kind as "Compra"|"Venta" : kind as "Compra"|"Venta";
+  const [productId,setProductId]=useState(isMovementEdit ? selectedItem.productId : (state.products[0]?.id||""));
   const product=state.products.find(p=>p.id===productId);
-  const [presentation,setPresentation]=useState<Presentation>("unidad");
-  const [qty,setQty]=useState(1);
-  const [price,setPrice]=useState(()=>product?productValue(product,"unidad",kind==="Compra"?"buy":"sell"):0);
-  const [method,setMethod]=useState<Movement["paymentMethod"]>("Transferencia");
+  const [presentation,setPresentation]=useState<Presentation>(isMovementEdit ? (selectedItem.unit === "caja" ? "caja" : "unidad") : "unidad");
+  const [qty,setQty]=useState(isMovementEdit ? Math.abs(selectedItem.quantity) : 1);
+  const [price,setPrice]=useState(()=>isMovementEdit ? selectedItem.price : (product?productValue(product,"unidad",kind==="Compra"?"buy":"sell"):0));
+  const [method,setMethod]=useState<Movement["paymentMethod"]>(isMovementEdit ? selectedItem.paymentMethod : "Transferencia");
 
   const [adjustType, setAdjustType] = useState<"Ingreso"|"Merma">("Merma");
   const [reason, setReason] = useState("Pérdida por descomposición");
@@ -560,6 +560,29 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
       const key = kind === "EditCliente" ? "clients" : "providers";
       const nextRows = state[key].map(x => x.id === selectedItem.id ? { ...x, name: String(fd.get("name")), rut: String(fd.get("rut")), phone: String(fd.get("phone")) } : x);
       onSave({ ...state, [key]: nextRows }, `Editó ${kind === "EditCliente" ? "Cliente" : "Proveedor"}`, `Nombre: ${selectedItem.name} -> ${String(fd.get("name"))}`);
+      return;
+    }
+
+    if(kind === "EditMovimiento") {
+      const partyId = String(fd.get("party"));
+      const total = qty * price;
+      const paid = method === "Crédito" ? Number(fd.get("paid") || 0) : total;
+      const oldM = selectedItem as Movement;
+      const nextMovements = state.movements.map(m => m.id === oldM.id ? { ...m, date: String(fd.get("date")), partyId, productId, quantity: qty, unit: presentation, price, total, paymentMethod: method, paid } : m);
+      const nextProducts = state.products.map(p => {
+        if (p.id !== oldM.productId && p.id !== productId) return p;
+        let result = { ...p };
+        if (p.id === oldM.productId && oldM.productId !== productId) {
+          const oldDelta = oldM.kind === "Compra" ? -oldM.quantity : oldM.quantity;
+          result = presentation === "unidad" ? { ...result, stockUnit: Math.max(0, productValue(result, "unidad", "stock") + oldDelta) } : { ...result, stockBox: Math.max(0, productValue(result, "caja", "stock") + oldDelta) };
+        }
+        if (p.id === productId) {
+          const newDelta = editKind === "Compra" ? qty : -qty;
+          result = presentation === "unidad" ? { ...result, stockUnit: Math.max(0, productValue(result, "unidad", "stock") + newDelta) } : { ...result, stockBox: Math.max(0, productValue(result, "caja", "stock") + newDelta) };
+        }
+        return result;
+      });
+      onSave({ ...state, movements: nextMovements, products: nextProducts }, `Editó ${editKind}`, `${qty} ${presentation}(s) de ${state.products.find(p => p.id === productId)?.name || ""}`);
       return;
     }
 
@@ -629,7 +652,7 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
   const pending=state.movements.filter(m=>m.total>m.paid);
   const isEdit = kind.startsWith("Edit");
   
-  return <div className="modal-layer" onMouseDown={onClose}><div className="modal-card" onMouseDown={e=>e.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow">{isEdit ? "MODIFICAR REGISTRO" : "NUEVO REGISTRO"}</p><h2>{kind==="Pago"?"Registrar pago o abono":kind==="Ajuste"?"Registrar Ajuste / Merma":kind==="EditProducto"?"Editar Producto":kind==="EditCliente"?"Editar Cliente":kind==="EditProveedor"?"Editar Proveedor":`Registrar ${kind.toLowerCase()}`}</h2></div><button className="icon-button" onClick={onClose}><X/></button></div>
+  return <div className="modal-layer" onMouseDown={onClose}><div className="modal-card" onMouseDown={e=>e.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow">{isEdit ? "MODIFICAR REGISTRO" : "NUEVO REGISTRO"}</p><h2>{kind==="Pago"?"Registrar pago o abono":kind==="Ajuste"?"Registrar Ajuste / Merma":kind==="EditProducto"?"Editar Producto":kind==="EditCliente"?"Editar Cliente":kind==="EditProveedor"?"Editar Proveedor":kind==="EditMovimiento"?"Editar "+editKind:`Registrar ${kind.toLowerCase()}`}</h2></div><button className="icon-button" onClick={onClose}><X/></button></div>
   <form onSubmit={submit}>
     {(kind==="Cliente"||kind==="Proveedor"||kind==="EditCliente"||kind==="EditProveedor") ? <>
       <label>Nombre<input name="name" defaultValue={selectedItem?.name || ""} required/></label>
@@ -698,11 +721,11 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
         </label>
       </div>
     </> : <>
-      <div className="form-grid"><label>Fecha<input name="date" type="date" defaultValue={dateToday()} required/></label><label>{kind==="Venta"?"Cliente":"Proveedor"}<select name="party" required>{(kind==="Venta"?state.clients:state.providers).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label></div>
+      <div className="form-grid"><label>Fecha<input name="date" type="date" defaultValue={isMovementEdit ? selectedItem.date : dateToday()} required/></label><label>{editKind==="Venta"?"Cliente":"Proveedor"}<select name="party" required defaultValue={isMovementEdit ? selectedItem.partyId : undefined}>{(editKind==="Venta"?state.clients:state.providers).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label></div>
       <div className="form-grid"><label>Producto<select value={productId} onChange={e=>changeProduct(e.target.value)}>{state.products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label>Presentación<select value={presentation} onChange={e=>changePresentation(e.target.value as Presentation)}><option value="unidad">Unidad</option><option value="caja">Caja</option></select></label></div>
       <div className="form-grid"><label>Cantidad<input type="number" min="0.01" step="0.01" value={qty} onChange={e=>setQty(Number(e.target.value))}/></label><label>Precio por {presentation}<input type="number" min="0" value={price} onChange={e=>setPrice(Number(e.target.value))}/></label></div>
       <label>Forma de pago<select value={method} onChange={e=>setMethod(e.target.value as Movement["paymentMethod"])}><option>Transferencia</option><option>Efectivo</option><option>Crédito</option></select></label>
-      {method==="Crédito"&&<label>Abono inicial<input name="paid" type="number" min="0" defaultValue="0"/></label>}
+      {method==="Crédito"&&<label>Abono inicial<input name="paid" type="number" min="0" defaultValue={isMovementEdit ? selectedItem.paid : "0"}/></label>}
       <div className="sale-total"><span>Total</span><strong>{money(qty*price)}</strong></div>
     </>}
     <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" type="submit">Guardar</button></div>

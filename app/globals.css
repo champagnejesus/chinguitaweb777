@@ -670,6 +670,17 @@ select:focus-visible {
   font-weight: 800;
 }
 
+.edit-link {
+  color: var(--navy-500);
+  text-decoration: underline;
+  font-weight: 600;
+  font-size: 12px;
+  margin-left: 6px;
+}
+.edit-link:hover {
+  color: var(--teal-700);
+}
+
 .activity-list {
   padding: 0 26px 16px;
 }
