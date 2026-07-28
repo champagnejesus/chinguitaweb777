@@ -490,7 +490,7 @@ select:focus-visible {
 }
 
 .recent-table table {
-  min-width: 960px;
+  width: 100%;
 }
 
 .recent-strip {
@@ -1733,7 +1733,7 @@ td small {
 
   .recent-table table {
     display: table;
-    min-width: 900px;
+    min-width: 100%;
   }
 
   .recent-table thead {
