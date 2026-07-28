@@ -1453,12 +1453,17 @@ td small {
     z-index: 15;
     display: grid;
     height: 75px;
-    grid-template-columns: 40px 1fr 40px;
+    grid-template-columns: 40px 1fr auto;
     align-items: center;
     border-bottom: 1px solid var(--ice-200);
     background: rgba(255, 255, 255, 0.94);
     padding: 0 14px;
     backdrop-filter: blur(18px);
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+
+  .dark .mobile-header {
+    background: rgba(11, 15, 25, 0.94);
   }
 
   .mobile-header .brand {
@@ -1718,7 +1723,7 @@ td small {
   .responsive-table table{min-width:0}
   .responsive-table thead{display:none}
   .responsive-table tbody{display:grid;gap:12px}
-  .responsive-table tr{display:grid;border:1px solid var(--ice-200);border-radius:15px;background:#fff;padding:10px 14px;box-shadow:0 7px 18px rgba(15,52,68,.04)}
+  .responsive-table tr{display:grid;border:1px solid var(--ice-200);border-radius:15px;background:var(--white);padding:10px 14px;box-shadow:0 7px 18px rgba(15,52,68,.04);transition: background 0.3s ease, border-color 0.3s ease;}
   .responsive-table td{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:42px;border-top:1px solid var(--ice-100);padding:9px 0;text-align:right;font-size:13px}
   .responsive-table td:first-child{border-top:0}
   .responsive-table td::before{content:attr(data-label);color:var(--slate-500);font-size:10px;font-weight:800;letter-spacing:.04em;text-align:left;text-transform:uppercase}
