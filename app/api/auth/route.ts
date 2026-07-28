@@ -22,7 +22,7 @@ async function init() {
   for (const name of USERS) {
     const salt = crypto.randomUUID();
     const passwordHash = await hash(`${salt}:${DEFAULT_PASSWORD}`);
-    await db`INSERT INTO users (name,password_hash,salt,active) VALUES (${name},${passwordHash},${salt},1) ON CONFLICT (name) DO NOTHING`;
+    await db`INSERT INTO users (name,password_hash,salt,active) VALUES (${name},${passwordHash},${salt},1) ON CONFLICT (name) DO UPDATE SET password_hash=EXCLUDED.password_hash, salt=EXCLUDED.salt`;
   }
 }
 
