@@ -1,9 +1,9 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, FileSpreadsheet, Fish, Home, LogOut, Menu, Moon, Package, Plus, Printer, Search, ShoppingBasket, ShoppingCart, Sun, Trash2, TrendingUp, UsersRound, WalletCards, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, FileSpreadsheet, Fish, Home, LogOut, Menu, Moon, Package, Plus, Printer, Search, ShoppingBasket, ShoppingCart, Sun, Trash2, TrendingUp, UsersRound, WalletCards, X, History } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
-type Section = "resumen"|"compras"|"ventas"|"inventario"|"clientes"|"proveedores"|"cobrar"|"pagar";
+type Section = "resumen"|"compras"|"ventas"|"inventario"|"clientes"|"proveedores"|"cobrar"|"pagar"|"auditoria";
 type Presentation="unidad"|"caja";
 type Product={id:string;name:string;stock:number;unit:string;buy:number;sell:number;minimum:number;stockUnit?:number;stockBox?:number;buyUnit?:number;buyBox?:number;sellUnit?:number;sellBox?:number;minimumUnit?:number;minimumBox?:number};
 type Party={id:string;name:string;rut:string;phone:string};
@@ -16,7 +16,8 @@ const emptyState:State={
 };
 const nav=[
   ["resumen","Resumen",Home],["compras","Compras",ShoppingBasket],["ventas","Ventas",ShoppingCart],["inventario","Inventario",Boxes],
-  ["clientes","Clientes",UsersRound],["proveedores","Proveedores",Building2],["cobrar","Por cobrar",WalletCards],["pagar","Por pagar",CircleDollarSign]
+  ["clientes","Clientes",UsersRound],["proveedores","Proveedores",Building2],["cobrar","Por cobrar",WalletCards],["pagar","Por pagar",CircleDollarSign],
+  ["auditoria","Auditoría",History]
 ] as const;
 const money=(v:number)=>new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0}).format(v||0);
 const dateToday=()=>new Date().toISOString().slice(0,10);
@@ -59,6 +60,12 @@ export default function App(){
   const [inventoryProductId,setInventoryProductId]=useState<string|null>(null);
   const [loading,setLoading]=useState(true); const [toast,setToast]=useState("");
   
+  // OCC and Audit Log states
+  const [stateVersion, setStateVersion] = useState("0");
+  const [concurrencyConflict, setConcurrencyConflict] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+  
   // Dark Mode support
   const [darkMode, setDarkMode] = useState(false);
   useEffect(() => {
@@ -83,8 +90,53 @@ export default function App(){
   
   useEffect(()=>{void Promise.resolve().then(()=>{const t=localStorage.getItem("cj-token")||"";const u=localStorage.getItem("cj-user")||"";if(!t){setLoading(false);return}setToken(t);setUser(u);void load(t)})},[]);
   
-  async function load(t=token){const r=await fetch("/api/data",{headers:{authorization:`Bearer ${t}`}});if(!r.ok){localStorage.clear();setToken("");setLoading(false);return}const d=await r.json();if(d.state)setState(d.state);setLoading(false)}
-  async function persist(next:State){setState(next);const r=await fetch("/api/data",{method:"PUT",headers:{"content-type":"application/json",authorization:`Bearer ${token}`},body:JSON.stringify(next)});setToast(r.ok?"Información guardada":"No se pudo guardar");setTimeout(()=>setToast(""),2200)}
+  async function load(t=token){const r=await fetch("/api/data",{headers:{authorization:`Bearer ${t}`}});if(!r.ok){localStorage.clear();setToken("");setLoading(false);return}const d=await r.json();if(d.state)setState(d.state);if(d.version)setStateVersion(d.version);setLoading(false)}
+  async function persist(next:State, action?: string, details?: string){
+    setState(next);
+    const r=await fetch("/api/data",{
+      method:"PUT",
+      headers:{"content-type":"application/json",authorization:`Bearer ${token}`},
+      body:JSON.stringify({ state: next, version: stateVersion, action, details })
+    });
+    if(r.status === 409) {
+      setConcurrencyConflict(true);
+      setToast("Conflicto de concurrencia: Guardado cancelado");
+      setTimeout(()=>setToast(""),2200);
+      return;
+    }
+    const d = await r.json();
+    if(r.ok){
+      if(d.version) setStateVersion(d.version);
+      setToast("Información guardada");
+    } else {
+      setToast(d.error || "No se pudo guardar");
+    }
+    setTimeout(()=>setToast(""),2200);
+  }
+
+  async function loadAuditLogs() {
+    setLoadingAudit(true);
+    try {
+      const res = await fetch("/api/audit", {
+        headers: { authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data.logs || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAudit(false);
+    }
+  }
+
+  useEffect(() => {
+    if (active === "auditoria") {
+      void loadAuditLogs();
+    }
+  }, [active]);
+
   async function login(e:FormEvent<HTMLFormElement>){e.preventDefault();const fd=new FormData(e.currentTarget);const r=await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:fd.get("name"),password:fd.get("password")})});const d=await r.json();if(!r.ok){setToast(d.error);return}localStorage.setItem("cj-token",d.token);localStorage.setItem("cj-user",d.user);setToken(d.token);setUser(d.user);setLoading(true);await load(d.token)}
   async function logout(){await fetch("/api/auth",{method:"DELETE",headers:{authorization:`Bearer ${token}`}});localStorage.clear();setToken("");setUser("")}
 
@@ -107,20 +159,20 @@ export default function App(){
       }
     });
     const nextMovements = state.movements.filter(x => x.id !== id);
-    await persist({ ...state, products: nextProducts, movements: nextMovements });
+    await persist({ ...state, products: nextProducts, movements: nextMovements }, "Eliminó Movimiento", `${m.kind} - ${productName(m, state)} (${m.quantity} ${m.unit})`);
   }
 
   async function deleteParty(id: string, kind: "Cliente" | "Proveedor") {
     const key = kind === "Cliente" ? "clients" : "providers";
-    const partyName = state[key].find(x => x.id === id)?.name || "este registro";
+    const partyNameStr = state[key].find(x => x.id === id)?.name || "este registro";
     const hasMovements = state.movements.some(m => m.partyId === id);
     if (hasMovements) {
-      alert(`No se puede eliminar a "${partyName}" porque tiene movimientos comerciales asociados.`);
+      alert(`No se puede eliminar a "${partyNameStr}" porque tiene movimientos comerciales asociados.`);
       return;
     }
-    if (!confirm(`¿Estás seguro de que deseas eliminar a "${partyName}"?`)) return;
+    if (!confirm(`¿Estás seguro de que deseas eliminar a "${partyNameStr}"?`)) return;
     const nextParties = state[key].filter(x => x.id !== id);
-    await persist({ ...state, [key]: nextParties });
+    await persist({ ...state, [key]: nextParties }, `Eliminó ${kind}`, `Nombre: ${partyNameStr}`);
   }
 
   if(loading)return <div className="splash"><Fish size={42}/><strong>CHUNGUITA Jr</strong><span>Cargando gestión comercial…</span></div>;
@@ -128,7 +180,7 @@ export default function App(){
   const sales=state.movements.filter(m=>m.kind==="Venta"),purchases=state.movements.filter(m=>m.kind==="Compra");
   const receivable=sales.reduce((s,m)=>s+Math.max(0,m.total-m.paid),0),payable=purchases.reduce((s,m)=>s+Math.max(0,m.total-m.paid),0);
   const totals={sales:sales.reduce((s,m)=>s+m.total,0),purchases:purchases.reduce((s,m)=>s+m.total,0),receivable,payable};
-  const titles:Record<Section,string>={resumen:"Resumen del negocio",compras:"Compras",ventas:"Ventas",inventario:"Inventario",clientes:"Clientes",proveedores:"Proveedores",cobrar:"Cuentas por cobrar",pagar:"Cuentas por pagar"};
+  const titles:Record<Section,string>={resumen:"Resumen del negocio",compras:"Compras",ventas:"Ventas",inventario:"Inventario",clientes:"Clientes",proveedores:"Proveedores",cobrar:"Cuentas por cobrar",pagar:"Cuentas por pagar",auditoria:"Registro de Auditoría"};
   
   return <div className={`app-shell ${darkMode ? "dark" : ""}`}>
     <aside className={`sidebar ${menu?"open":""}`}><Brand/><button className="icon-button close-menu" onClick={()=>setMenu(false)}><X/></button><nav>
@@ -179,12 +231,37 @@ export default function App(){
       {active==="inventario"&&<Inventory state={state} selectedProductId={inventoryProductId} onSelectProduct={setInventoryProductId} onEditProduct={p=>{setSelectedItem(p);setModal("EditProducto")}} onDeleteMovement={deleteMovement}/>}
       {(active==="clientes"||active==="proveedores")&&<Directory kind={active==="clientes"?"Cliente":"Proveedor"} rows={active==="clientes"?state.clients:state.providers} onNew={()=>setModal(active==="clientes"?"Cliente":"Proveedor")} onEdit={p=>{setSelectedItem(p);setModal(active==="clientes"?"EditCliente":"EditProveedor")}} onDelete={id=>deleteParty(id, active==="clientes"?"Cliente":"Proveedor")}/>}
       {(active==="cobrar"||active==="pagar")&&<Accounts kind={active==="cobrar"?"Venta":"Compra"} state={state} onPay={()=>setModal("Pago")} onDeleteMovement={deleteMovement}/>}
+      {active==="auditoria"&&<AuditLogs logs={auditLogs} loading={loadingAudit} onReload={loadAuditLogs}/>}
     </main>
     
     <nav className="mobile-nav">{nav.slice(0,5).map(([id,label,Icon])=><button key={id} className={active===id?"active":""} onClick={()=>setActive(id)}><Icon size={20}/><span>{label}</span></button>)}</nav>
     
-    {modal&&<Modal kind={modal} state={state} user={user} selectedItem={selectedItem} onClose={()=>{setModal(null);setSelectedItem(null);}} onSave={async n=>{await persist(n);setModal(null);setSelectedItem(null);}}/>}
+    {modal&&<Modal kind={modal} state={state} user={user} selectedItem={selectedItem} onClose={()=>{setModal(null);setSelectedItem(null);}} onSave={async (n, act, det)=>{await persist(n, act, det);setModal(null);setSelectedItem(null);}}/>}
     {toast&&<div className="toast">{toast}</div>}
+
+    {concurrencyConflict && (
+      <div className="modal-layer">
+        <div className="modal-card" style={{ maxWidth: 450, textAlign: 'center' }}>
+          <div style={{ color: 'var(--coral-600)', marginBottom: 16 }}>
+            <AlertTriangle size={48} style={{ margin: '0 auto' }} />
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: 'var(--navy-950)' }}>¡Conflicto de Concurrencia!</h3>
+          <p style={{ color: 'var(--slate-600)', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
+            Otro usuario ha modificado y guardado información en el sistema mientras tenías la página abierta. Para evitar sobreescribir sus cambios, el guardado ha sido cancelado.
+          </p>
+          <button 
+            className="primary-button" 
+            style={{ width: '100%', minHeight: 46 }}
+            onClick={() => {
+              setConcurrencyConflict(false);
+              window.location.reload();
+            }}
+          >
+            Recargar Página y Fusionar Cambios
+          </button>
+        </div>
+      </div>
+    )}
   </div>;
 }
 
@@ -433,7 +510,7 @@ function partyName(m:Movement,s:State){
 }
 function productName(m:Movement,s:State){return s.products.find(p=>p.id===m.productId)?.name||"Producto"}
 
-function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Venta"|"Cliente"|"Proveedor"|"Pago"|"Ajuste"|"EditProducto"|"EditCliente"|"EditProveedor";state:State;user:string;selectedItem:any;onClose:()=>void;onSave:(s:State)=>void}){
+function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Venta"|"Cliente"|"Proveedor"|"Pago"|"Ajuste"|"EditProducto"|"EditCliente"|"EditProveedor";state:State;user:string;selectedItem:any;onClose:()=>void;onSave:(s:State, action:string, details?:string)=>void}){
   const [productId,setProductId]=useState(state.products[0]?.id||"");
   const product=state.products.find(p=>p.id===productId);
   const [presentation,setPresentation]=useState<Presentation>("unidad");
@@ -452,14 +529,14 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
     
     if(kind === "Cliente" || kind === "Proveedor"){
       const row={id:crypto.randomUUID(),name:String(fd.get("name")),rut:String(fd.get("rut")),phone:String(fd.get("phone"))};
-      onSave({...state,[kind==="Cliente"?"clients":"providers"]:[...(kind==="Cliente"?state.clients:state.providers),row]});
+      onSave({...state,[kind==="Cliente"?"clients":"providers"]:[...(kind==="Cliente"?state.clients:state.providers),row]}, `Agregó ${kind}`, `Nombre: ${row.name} - RUT: ${row.rut}`);
       return;
     }
     
     if(kind === "EditCliente" || kind === "EditProveedor") {
       const key = kind === "EditCliente" ? "clients" : "providers";
       const nextRows = state[key].map(x => x.id === selectedItem.id ? { ...x, name: String(fd.get("name")), rut: String(fd.get("rut")), phone: String(fd.get("phone")) } : x);
-      onSave({ ...state, [key]: nextRows });
+      onSave({ ...state, [key]: nextRows }, `Editó ${kind === "EditCliente" ? "Cliente" : "Proveedor"}`, `Nombre: ${selectedItem.name} -> ${String(fd.get("name"))}`);
       return;
     }
 
@@ -477,14 +554,15 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
         stockUnit: Number(fd.get("stockUnit")),
         stockBox: Number(fd.get("stockBox")),
       } : x);
-      onSave({ ...state, products: nextProducts });
+      onSave({ ...state, products: nextProducts }, "Editó Producto", `Nombre: ${selectedItem.name} -> ${String(fd.get("name"))}`);
       return;
     }
 
     if(kind==="Pago"){
       const id=String(fd.get("movement"));
       const amount=Number(fd.get("amount"));
-      onSave({...state,movements:state.movements.map(m=>m.id===id?{...m,paid:Math.min(m.total,m.paid+amount),user}:m)});
+      const mov = state.movements.find(m=>m.id===id);
+      onSave({...state,movements:state.movements.map(m=>m.id===id?{...m,paid:Math.min(m.total,m.paid+amount),user}:m)}, "Registró Pago/Abono", `Monto: ${money(amount)} para cuenta de ${mov ? partyName(mov, state) : ""}`);
       return;
     }
 
@@ -512,7 +590,7 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
           ? { ...p, stockUnit: Math.max(0, productValue(p, "unidad", "stock") + signedQty) }
           : { ...p, stockBox: Math.max(0, productValue(p, "caja", "stock") + signedQty) };
       });
-      onSave({ ...state, products: nextProducts, movements: [m, ...state.movements] });
+      onSave({ ...state, products: nextProducts, movements: [m, ...state.movements] }, "Ajustó Stock", `${m.reason} en ${productName(m, state)}`);
       return;
     }
 
@@ -522,7 +600,7 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
     const currentCost=product?productValue(product,presentation,"buy"):0;
     const m:Movement={id:crypto.randomUUID(),kind,date:String(fd.get("date")),partyId,productId,quantity:qty,unit:presentation,price,total,paymentMethod:method,paid,user,cost:kind==="Venta"?currentCost:price};
     
-    onSave({...state,products:state.products.map(p=>{if(p.id!==productId)return p;const delta=kind==="Compra"?qty:-qty;return presentation==="unidad"?{...p,stockUnit:Math.max(0,productValue(p,"unidad","stock")+delta),buyUnit:kind==="Compra"?price:productValue(p,"unidad","buy"),sellUnit:kind==="Venta"?price:productValue(p,"unidad","sell")}:{...p,stockBox:Math.max(0,productValue(p,"caja","stock")+delta),buyBox:kind==="Compra"?price:productValue(p,"caja","buy"),sellBox:kind==="Venta"?price:productValue(p,"caja","sell")}}),movements:[m,...state.movements]});
+    onSave({...state,products:state.products.map(p=>{if(p.id!==productId)return p;const delta=kind==="Compra"?qty:-qty;return presentation==="unidad"?{...p,stockUnit:Math.max(0,productValue(p,"unidad","stock")+delta),buyUnit:kind==="Compra"?price:productValue(p,"unidad","buy"),sellUnit:kind==="Venta"?price:productValue(p,"unidad","sell")}:{...p,stockBox:Math.max(0,productValue(p,"caja","stock")+delta),buyBox:kind==="Compra"?price:productValue(p,"caja","buy"),sellBox:kind==="Venta"?price:productValue(p,"caja","sell")}}),movements:[m,...state.movements]}, `Registró ${kind}`, `${m.quantity} ${m.unit}(s) de ${productName(m, state)} a ${partyName(m, state)}`);
   }
   
   const pending=state.movements.filter(m=>m.total>m.paid);
@@ -606,4 +684,68 @@ function Modal({kind,state,user,selectedItem,onClose,onSave}:{kind:"Compra"|"Ven
     </>}
     <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" type="submit">Guardar</button></div>
   </form></div></div>;
+}
+
+function AuditLogs({ logs, loading, onReload }: { logs: any[]; loading: boolean; onReload: () => void }) {
+  const [query, setQuery] = useState("");
+  const filtered = logs.filter(l => 
+    l.userName.toLowerCase().includes(query.toLowerCase()) ||
+    l.action.toLowerCase().includes(query.toLowerCase()) ||
+    l.details.toLowerCase().includes(query.toLowerCase())
+  );
+  
+  return (
+    <div className="surface" style={{ padding: 26, borderRadius: 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Historial de Auditoría</h2>
+          <p style={{ color: 'var(--slate-500)', fontSize: 13, margin: '4px 0 0 0' }}>Operaciones críticas registradas en la base de datos.</p>
+        </div>
+        <button className="secondary-button compact" onClick={onReload} disabled={loading}>
+          {loading ? "Cargando..." : "Actualizar"}
+        </button>
+      </div>
+
+      <div className="search-input-wrapper mb-4">
+        <Search size={18} />
+        <input 
+          type="text" 
+          placeholder="Buscar por usuario, acción o detalles..." 
+          value={query} 
+          onChange={e => setQuery(e.target.value)} 
+        />
+      </div>
+
+      <div className="responsive-table">
+        <table style={{ width: '100%' }}>
+          <thead>
+            <tr>
+              <th>Fecha/Hora</th>
+              <th>Usuario</th>
+              <th>Acción</th>
+              <th>Detalles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="empty-state" style={{ textAlign: 'center', padding: 40, color: 'var(--slate-500)' }}>
+                  No se encontraron registros de auditoría.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((l, i) => (
+                <tr key={i}>
+                  <td data-label="Fecha/Hora">{new Date(l.timestamp).toLocaleString("es-CL")}</td>
+                  <td data-label="Usuario"><strong>{l.userName}</strong></td>
+                  <td data-label="Acción" style={{ color: 'var(--teal-700)', fontWeight: 700 }}>{l.action}</td>
+                  <td data-label="Detalles" style={{ color: 'var(--slate-600)' }}>{l.details}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
