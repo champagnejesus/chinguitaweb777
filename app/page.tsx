@@ -90,7 +90,27 @@ export default function App(){
   
   useEffect(()=>{void Promise.resolve().then(()=>{const t=localStorage.getItem("cj-token")||"";const u=localStorage.getItem("cj-user")||"";if(!t){setLoading(false);return}setToken(t);setUser(u);void load(t)})},[]);
   
-  async function load(t=token){const r=await fetch("/api/data",{headers:{authorization:`Bearer ${t}`}});if(!r.ok){localStorage.clear();setToken("");setLoading(false);return}const d=await r.json();if(d.state)setState(d.state);if(d.version)setStateVersion(d.version);setLoading(false)}
+  async function load(t=token){
+    const r=await fetch("/api/data",{headers:{authorization:`Bearer ${t}`}});
+    if(!r.ok){
+      localStorage.clear();
+      setToken("");
+      setLoading(false);
+      return;
+    }
+    const d=await r.json();
+    if(d.state) {
+      const sanitizedState: State = {
+        products: d.state.products || [],
+        clients: d.state.clients || [],
+        providers: d.state.providers || [],
+        movements: d.state.movements || []
+      };
+      setState(sanitizedState);
+    }
+    if(d.version)setStateVersion(d.version);
+    setLoading(false);
+  }
   async function persist(next:State, action?: string, details?: string){
     setState(next);
     const r=await fetch("/api/data",{
