@@ -2024,3 +2024,65 @@ td small {
   font-size: 11px !important;
   font-weight: 700 !important;
 }
+
+@media (max-width: 720px) {
+  .recent-table tr {
+    display: grid !important;
+    grid-template-columns: 1fr auto auto !important;
+    grid-template-areas: 
+      "party total action"
+      "product total action" !important;
+    align-items: center;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ice-100) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 12px 8px !important;
+    border-radius: 0 !important;
+    gap: 2px 12px !important;
+  }
+  .recent-table tr:last-child {
+    border-bottom: 0 !important;
+  }
+  .recent-table td::before {
+    display: none !important;
+  }
+  .recent-table td {
+    border: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    text-align: left !important;
+    width: auto !important;
+    display: block !important;
+  }
+  .recent-table td[data-label="Cliente / Prov / Motivo"] {
+    grid-area: party;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy-900);
+  }
+  .recent-table td[data-label="Producto"] {
+    grid-area: product;
+    font-size: 12px;
+    color: var(--slate-500);
+  }
+  .recent-table td[data-label="Total"] {
+    grid-area: total;
+    text-align: right !important;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--navy-900);
+  }
+  .recent-table td[data-label="Acciones"] {
+    grid-area: action;
+    display: flex !important;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .recent-table td[data-label="Fecha"],
+  .recent-table td[data-label="Forma de pago"],
+  .recent-table td[data-label="Abono"],
+  .recent-table td[data-label="Saldo"] {
+    display: none !important;
+  }
+}
