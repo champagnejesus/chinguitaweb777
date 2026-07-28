@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, FileSpreadsheet, Fish, Home, LogOut, Menu, Moon, Package, Plus, Printer, Search, ShoppingBasket, ShoppingCart, Sun, Trash2, TrendingUp, UsersRound, WalletCards, X, History } from "lucide-react";
+import { AlertTriangle, ArrowRight, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, FileSpreadsheet, Fish, Home, LogOut, Menu, Moon, Package, Plus, Printer, Search, ShoppingBasket, ShoppingCart, Sun, Trash2, TrendingUp, UsersRound, WalletCards, X, History, Eye, EyeOff } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 type Section = "resumen"|"compras"|"ventas"|"inventario"|"clientes"|"proveedores"|"cobrar"|"pagar"|"auditoria";
@@ -285,7 +285,10 @@ export default function App(){
   </div>;
 }
 
-function Login({onLogin,error}:{onLogin:(e:FormEvent<HTMLFormElement>)=>void;error:string}){return <main className="login-page"><section className="login-card"><Brand/><div><p className="eyebrow">ACCESO SEGURO</p><h1>Gestión comercial</h1><p>Ingresa con tu nombre y clave asignada.</p></div><form onSubmit={onLogin}><label>Usuario<select name="name"><option>Juan Pablo</option><option>Soledad Cortes</option><option>Miguel Angel Contreras</option><option>Administrador</option></select></label><label>Clave<input name="password" type="password" required/></label>{error&&<p className="form-error">{error}</p>}<button className="primary-button" type="submit">Ingresar</button></form><small>Todos los movimientos quedarán identificados por usuario, fecha y hora.</small></section></main>}
+function Login({onLogin,error}:{onLogin:(e:FormEvent<HTMLFormElement>)=>void;error:string}){
+  const [showPassword, setShowPassword] = useState(false);
+  return <main className="login-page"><section className="login-card"><Brand/><div><p className="eyebrow">ACCESO SEGURO</p><h1>Gestión comercial</h1><p>Ingresa con tu nombre y clave asignada.</p></div><form onSubmit={onLogin}><label>Usuario<select name="name"><option>Juan Pablo</option><option>Soledad Cortes</option><option>Miguel Angel Contreras</option><option>Administrador</option></select></label><label>Clave<div style={{ position: "relative", marginTop: 8 }}><input name="password" type={showPassword ? "text" : "password"} required style={{ width: "100%", paddingRight: 46, marginTop: 0 }} /><button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "transparent", border: 0, padding: 4, display: "grid", placeItems: "center", color: "var(--slate-500)", cursor: "pointer" }}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>{error&&<p className="form-error">{error}</p>}<button className="primary-button" type="submit">Ingresar</button></form><small>Todos los movimientos quedarán identificados por usuario, fecha y hora.</small></section></main>;
+}
 function Brand(){return <div className="brand"><div className="brand-mark"><Fish size={32}/></div><div><strong>CHUNGUITA <em>Jr</em></strong><small>GESTIÓN COMERCIAL</small></div></div>}
 function ExportActions({title,rows}:{title:string;rows:ExportRow[]}){return <div className="export-actions"><button className="export-button excel" onClick={()=>exportExcel(title,rows)}><FileSpreadsheet/>Excel</button><button className="export-button pdf" onClick={()=>exportPdf(title,rows)}><Printer/>PDF</button></div>}
 function movementRows(rows:Movement[],state:State,kind:Movement["kind"]):ExportRow[]{return rows.map(m=>({Fecha:m.date,[kind==="Compra"?"Proveedor":kind==="Venta"?"Cliente":"Detalle"]:partyName(m,state),Producto:`${productName(m,state)} · ${m.quantity} ${m.unit}`,"Forma de pago":m.paymentMethod,Total:money(m.total),Abono:money(m.paid),Saldo:money(m.total-m.paid)}))}
