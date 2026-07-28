@@ -101,7 +101,7 @@ select:focus-visible {
   inset: 0 auto 0 0;
   z-index: 30;
   display: flex;
-  width: 286px;
+  width: 240px;
   flex-direction: column;
   border-right: 1px solid var(--ice-200);
   background: rgba(255, 255, 255, 0.9);
@@ -259,8 +259,8 @@ select:focus-visible {
 
 .main-content {
   min-height: 100vh;
-  margin-left: 286px;
-  padding: 42px clamp(28px, 4vw, 62px) 64px;
+  margin-left: 240px;
+  padding: 42px clamp(20px, 3vw, 48px) 64px;
 }
 
 .page-header {
@@ -372,7 +372,7 @@ select:focus-visible {
   display: grid;
   max-width: 1440px;
   margin: 0 auto 20px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 15px;
 }
 
