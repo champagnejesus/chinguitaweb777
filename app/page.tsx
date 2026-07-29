@@ -887,7 +887,7 @@ function MonthlySummaryTabContent({ state }: { state: State }) {
   const profitMoM = prevMonth.utilidad > 0 ? ((currentMonth.utilidad - prevMonth.utilidad) / prevMonth.utilidad) * 100 : 0;
 
   const maxVal = Math.max(...monthsData.map((m) => Math.max(m.ventas, m.compras, m.utilidad)), 1);
-
+  const exportData = [
     { Indicador: "Total Ventas Facturadas", Current: money(currentMonth.ventas), Prev: money(prevMonth.ventas), MoM: `${salesMoM.toFixed(1)}%`, YoY: `${salesYoY.toFixed(1)}%` },
     { Indicador: "Total Compras Realizadas", Current: money(currentMonth.compras), Prev: money(prevMonth.compras), MoM: "—", YoY: "—" },
     { Indicador: "Utilidad Bruta Generada", Current: money(currentMonth.utilidad), Prev: money(prevMonth.utilidad), MoM: `${profitMoM.toFixed(1)}%`, YoY: "—" },
