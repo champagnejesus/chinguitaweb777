@@ -39,6 +39,8 @@
     "worker",
     "vite.config.ts",
     "drizzle.config.ts",
-    "app/chatgpt-auth.ts"
+    "app/chatgpt-auth.ts",
+    "vitest.config.ts",
+    "tests"
   ]
 }
