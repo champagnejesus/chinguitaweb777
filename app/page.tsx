@@ -1678,6 +1678,45 @@ function Inventory({
     };
   });
 
+  const runningStockMap = useMemo(() => {
+    const map = new Map<string, { stockUnit: number; stockBox: number }>();
+    const byProduct = new Map<string, Movement[]>();
+    state.movements.forEach((m) => {
+      const list = byProduct.get(m.productId) || [];
+      list.push(m);
+      byProduct.set(m.productId, list);
+    });
+
+    byProduct.forEach((movs, prodId) => {
+      const product = state.products.find((p) => p.id === prodId);
+      if (!product) return;
+
+      const sorted = [...movs].sort((a, b) => a.date.localeCompare(b.date));
+
+      let netUnitDelta = 0;
+      let netBoxDelta = 0;
+      sorted.forEach((m) => {
+        const signed = m.kind === "Compra" ? m.quantity : m.kind === "Venta" ? -m.quantity : m.quantity;
+        if (m.unit === "caja") netBoxDelta += signed;
+        else netUnitDelta += signed;
+      });
+
+      const finalUnit = productValue(product, "unidad", "stock");
+      const finalBox = productValue(product, "caja", "stock");
+      let currentUnit = finalUnit - netUnitDelta;
+      let currentBox = finalBox - netBoxDelta;
+
+      sorted.forEach((m) => {
+        const signed = m.kind === "Compra" ? m.quantity : m.kind === "Venta" ? -m.quantity : m.quantity;
+        if (m.unit === "caja") currentBox += signed;
+        else currentUnit += signed;
+        map.set(m.id, { stockUnit: Math.max(0, currentUnit), stockBox: Math.max(0, currentBox) });
+      });
+    });
+
+    return map;
+  }, [state.movements, state.products]);
+
   return (
     <section className="inventory-page">
       <div className="inventory-toolbar">
@@ -1696,6 +1735,18 @@ function Inventory({
             <Plus />
             Producto
           </button>
+          <label className="filter-select highlight-product-filter">
+            <span>PRODUCTO</span>
+            <select value={selectedProductId || "todas"} onChange={(e) => onSelectProduct(e.target.value === "todas" ? null : e.target.value)}>
+              <option value="todas">Todos los productos</option>
+              {state.products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.unit})
+                </option>
+              ))}
+            </select>
+            <ChevronDown />
+          </label>
           <label className="filter-select">
             <span>Ver presentación</span>
             <select value={filter} onChange={(e) => setFilter(e.target.value as "todas" | Presentation)}>
@@ -1757,35 +1808,26 @@ function Inventory({
         </article>
       </div>
 
-      <div className="product-settings-grid mb-6">
-        {filteredStats.map((s) => (
-          <div key={s.product.id} className="product-settings-card">
-            <div className="product-settings-header">
-              <h3>
-                {s.product.name} ({s.product.unit})
-                {s.product.category && <small style={{ marginLeft: 8, color: "var(--slate-500)", fontWeight: 400, fontSize: 12 }}>{s.product.category}</small>}
-              </h3>
-              <button className="icon-button compact-icon" onClick={() => onEditProduct(s.product)} title="Editar Producto">
-                <Edit size={15} />
-              </button>
-            </div>
-            <div className="product-settings-body">
-              <div>
-                <span>Stock Unidades:</span> <strong>{productValue(s.product, "unidad", "stock")}</strong> <small>(Mín: {productValue(s.product, "unidad", "minimum")})</small>
-              </div>
-              <div>
-                <span>Stock Cajas:</span> <strong>{productValue(s.product, "caja", "stock")}</strong> <small>(Mín: {productValue(s.product, "caja", "minimum")})</small>
-              </div>
-              <div>
-                <span>P. Compra Un:</span> {money(productValue(s.product, "unidad", "buy"))} | <span>Caja:</span> {money(productValue(s.product, "caja", "buy"))}
-              </div>
-              <div>
-                <span>P. Venta Un:</span> {money(productValue(s.product, "unidad", "sell"))} | <span>Caja:</span> {money(productValue(s.product, "caja", "sell"))}
-              </div>
-            </div>
+      {selectedProductId && visibleStats[0] && (
+        <div className="selected-product-summary-bar mb-6" style={{ background: "var(--ice-50)", padding: "14px 20px", borderRadius: 12, border: "1px solid var(--ice-200)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--navy-900)" }}>
+              {visibleStats[0].product.name} ({visibleStats[0].product.unit})
+              {visibleStats[0].product.category && <small style={{ marginLeft: 8, color: "var(--slate-500)", fontWeight: 400 }}>{visibleStats[0].product.category}</small>}
+            </h3>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--slate-600)" }}>
+              Stock Unidades: <strong>{productValue(visibleStats[0].product, "unidad", "stock")}</strong> (Mín: {productValue(visibleStats[0].product, "unidad", "minimum")}) |
+              Stock Cajas: <strong>{productValue(visibleStats[0].product, "caja", "stock")}</strong> (Mín: {productValue(visibleStats[0].product, "caja", "minimum")}) |
+              P. Venta Un: <strong>{money(productValue(visibleStats[0].product, "unidad", "sell"))}</strong> |
+              P. Venta Caja: <strong>{money(productValue(visibleStats[0].product, "caja", "sell"))}</strong>
+            </p>
           </div>
-        ))}
-      </div>
+          <button className="secondary-button compact" onClick={() => onEditProduct(visibleStats[0].product)}>
+            <Edit size={14} />
+            Editar Producto
+          </button>
+        </div>
+      )}
 
       <h3>Historial de Movimientos de Inventario</h3>
       <div className="inventory-ledger responsive-table">
@@ -1807,6 +1849,10 @@ function Inventory({
               const product = state.products.find((p) => p.id === m.productId);
               const presentation = m.unit === "caja" ? "caja" : "unidad";
               const signed = m.kind === "Compra" ? m.quantity : m.kind === "Venta" ? -m.quantity : m.quantity;
+              const stockInfo = runningStockMap.get(m.id);
+              const stockUn = stockInfo ? stockInfo.stockUnit : (product ? productValue(product, "unidad", "stock") : 0);
+              const stockCj = stockInfo ? stockInfo.stockBox : (product ? productValue(product, "caja", "stock") : 0);
+
               return (
                 <tr key={m.id}>
                   <td data-label="Fecha">{m.date}</td>
@@ -1839,10 +1885,10 @@ function Inventory({
                     )}
                   </td>
                   <td data-label="Stock · Un">
-                    <strong>{product ? productValue(product, "unidad", "stock") : 0}</strong>
+                    <strong>{stockUn}</strong>
                   </td>
                   <td data-label="Stock · Cj">
-                    <strong>{product ? productValue(product, "caja", "stock") : 0}</strong>
+                    <strong>{stockCj}</strong>
                   </td>
                   <td data-label="Acciones">
                     <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">

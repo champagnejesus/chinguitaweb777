@@ -3072,3 +3072,21 @@ td small {
 .compare-table th:first-child, .compare-table td:first-child {
   text-align: left;
 }
+
+/* --- Highlight Product Filter Select --- */
+.filter-select.highlight-product-filter {
+  border-color: var(--teal-600);
+  background-color: var(--ice-50);
+}
+
+.filter-select.highlight-product-filter span {
+  color: var(--teal-800);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.filter-select.highlight-product-filter select {
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
