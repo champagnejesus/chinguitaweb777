@@ -310,9 +310,6 @@ function App() {
             <button className="icon-button" onClick={toggleDarkMode} title="Cambiar tema">
               {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <button className="mobile-add" onClick={() => setModal("Venta")}>
-              <Plus />
-            </button>
           </div>
         </header>
         <section className="page-header">
