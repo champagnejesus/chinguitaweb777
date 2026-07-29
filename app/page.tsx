@@ -920,10 +920,6 @@ function MonthlySummaryTabContent({ state }: { state: State }) {
           <span className="kpi-label">Variación MoM Utilidad</span>
           <span className="kpi-val" style={{ color: profitMoM >= 0 ? "var(--coral-600)" : "#ef4444" }}>{profitMoM >= 0 ? "+" : ""}{profitMoM.toFixed(1)}%</span>
         </div>
-        <div className="party-kpi-card">
-          <span className="kpi-label">Ticket Promedio MoM</span>
-          <span className="kpi-val" style={{ color: "var(--navy-900)" }}>{ticketMoM >= 0 ? "+" : ""}{ticketMoM.toFixed(1)}%</span>
-        </div>
       </div>
 
       <div className="waterfall-card" style={{ marginBottom: 24 }}>
