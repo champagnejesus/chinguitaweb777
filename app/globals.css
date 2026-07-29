@@ -2658,13 +2658,28 @@ td small {
 
   .responsive-table table{min-width:0}
   .responsive-table thead{display:none}
-  .responsive-table tbody{display:grid;gap:12px}
-  .responsive-table tr{display:grid;border:1px solid var(--ice-200);border-radius:15px;background:var(--white);padding:10px 14px;box-shadow:0 7px 18px rgba(15,52,68,.04);transition: background 0.3s ease, border-color 0.3s ease;}
-  .responsive-table td{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:42px;border-top:1px solid var(--ice-100);padding:9px 0;text-align:right;font-size:13px}
-  .responsive-table td:first-child{border-top:0}
-  .responsive-table td::before{content:attr(data-label);color:var(--slate-500);font-size:10px;font-weight:800;letter-spacing:.04em;text-align:left;text-transform:uppercase}
-  .responsive-table td.empty-state{display:grid;height:130px;place-items:center;text-align:center}
+  .responsive-table tbody{display:grid;gap:16px}
+  .responsive-table tr{display:grid;border:1px solid var(--ice-100);border-radius:15px;background:var(--white);padding:14px 18px;box-shadow:var(--shadow-sm);transition: background 0.3s ease, border-color 0.3s ease;}
+  .responsive-table td{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;border-top:1px solid var(--ice-100);padding:12px 0;text-align:right;font-size:14px}
+  .responsive-table td:first-child{border-top:0;padding-top:0}
+  .responsive-table td:last-child{padding-bottom:0}
+  .responsive-table td::before{content:attr(data-label);color:var(--slate-500);font-size:11px;font-weight:600;letter-spacing:.04em;text-align:left;text-transform:uppercase}
+  .responsive-table td.empty-state{display:grid;height:130px;place-items:center;text-align:center;border-top:none;font-weight:500;}
   .responsive-table td.empty-state::before{display:none}
+  
+  /* Touch Targets for Action Buttons */
+  .responsive-table .icon-button {
+    height: 44px;
+    width: 44px;
+    border: 1px solid var(--ice-200);
+    border-radius: 12px;
+  }
+  
+  /* Directory Grid Single Column */
+  .directory-grid {
+    grid-template-columns: 1fr;
+    padding: 0 18px 24px;
+  }
   .inventory-table td[data-label="Stock"]{font-size:18px;font-weight:800;color:var(--navy-900)}
 
   /* Actividad reciente conserva la misma tabla de escritorio en móvil.
