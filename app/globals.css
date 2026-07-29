@@ -236,9 +236,10 @@ select:focus-visible {
 }
 
 .sidebar nav button.active {
-  background: linear-gradient(135deg, #e1f8f6, #edfafa);
+  background: var(--teal-100);
   color: var(--teal-700);
-  box-shadow: inset 0 0 0 1px rgba(22, 184, 176, 0.16);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(2, 132, 199, 0.16);
 }
 
 .sidebar-user {
@@ -367,12 +368,12 @@ select:focus-visible {
   border: 0;
   background: linear-gradient(135deg, var(--teal-700), var(--teal-600));
   color: white;
-  box-shadow: 0 12px 22px rgba(11, 166, 164, 0.2);
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.22);
 }
 
 .primary-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 16px 26px rgba(11, 166, 164, 0.25);
+  box-shadow: 0 12px 24px rgba(2, 132, 199, 0.3);
 }
 
 .secondary-button {
