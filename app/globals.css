@@ -1,62 +1,62 @@
 @import "tailwindcss";
 
 :root {
-  --navy-950: #111827;
-  --navy-900: #1f2937;
-  --navy-800: #374151;
-  --slate-600: #6b7280;
-  --slate-500: #9ca3af;
-  --ice-50: #f9fafb;
-  --ice-100: #f3f4f6;
-  --ice-200: #e5e7eb;
+  --navy-950: #0f172a;
+  --navy-900: #1e293b;
+  --navy-800: #334155;
+  --slate-600: #64748b;
+  --slate-500: #94a3b8;
+  --ice-50: #f8fafc;
+  --ice-100: #f1f5f9;
+  --ice-200: #e2e8f0;
   --white: #ffffff;
-  --teal-700: #008378;
-  --teal-600: #009688;
-  --teal-500: #00bfa5;
-  --teal-100: #e0f2f1;
-  --emerald-600: #1e8e3e;
-  --emerald-100: #e6f4ea;
-  --coral-600: #d93025;
-  --coral-500: #ea4335;
-  --coral-100: #fce8e6;
-  --violet-100: #f3e8fd;
-  --violet-600: #9334e6;
-  --blue-600: #1a73e8;
-  --blue-100: #e8f0fe;
-  --cyan-600: #12b5cb;
-  --cyan-100: #e0f7fa;
-  --amber-600: #825100;
-  --amber-100: #fef7e0;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --teal-700: #0369a1;
+  --teal-600: #0284c7;
+  --teal-500: #0ea5e9;
+  --teal-100: #e0f2fe;
+  --emerald-600: #10b981;
+  --emerald-100: #d1fae5;
+  --coral-600: #ef4444;
+  --coral-500: #f87171;
+  --coral-100: #fee2e2;
+  --violet-100: #f1f5f9;
+  --violet-600: #0284c7;
+  --blue-600: #2563eb;
+  --blue-100: #dbeafe;
+  --cyan-600: #0284c7;
+  --cyan-100: #e0f2fe;
+  --amber-600: #d97706;
+  --amber-100: #fef3c7;
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
 }
 
 .dark {
-  --navy-950: #f9fafb;
-  --navy-900: #e5e7eb;
-  --navy-800: #d1d5db;
-  --slate-600: #9ca3af;
-  --slate-500: #6b7280;
-  --ice-50: #111827;
-  --ice-100: #1f2937;
-  --ice-200: #374151;
-  --white: #0f172a;
-  --teal-700: #2dd4bf;
-  --teal-600: #14b8a6;
-  --teal-500: #0d9488;
-  --teal-100: #042f2e;
+  --navy-950: #f8fafc;
+  --navy-900: #f1f5f9;
+  --navy-800: #e2e8f0;
+  --slate-600: #94a3b8;
+  --slate-500: #64748b;
+  --ice-50: #090d16;
+  --ice-100: #0f172a;
+  --ice-200: #1e293b;
+  --white: #0b1120;
+  --teal-700: #38bdf8;
+  --teal-600: #0284c7;
+  --teal-500: #0ea5e9;
+  --teal-100: #082f49;
   --emerald-600: #34d399;
   --emerald-100: #064e3b;
   --coral-600: #f87171;
   --coral-500: #ef4444;
   --coral-100: #450a0a;
-  --violet-100: #2e1065;
-  --violet-600: #a78bfa;
+  --violet-100: #1e293b;
+  --violet-600: #38bdf8;
   --blue-600: #60a5fa;
   --blue-100: #1e3a5f;
-  --cyan-600: #22d3ee;
-  --cyan-100: #083344;
+  --cyan-600: #38bdf8;
+  --cyan-100: #082f49;
   --amber-600: #fbbf24;
   --amber-100: #451a03;
   --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
@@ -3089,4 +3089,48 @@ td small {
   font-weight: 700;
   color: var(--navy-900);
 }
+
+/* --- HTML5 Date Input Styling --- */
+input[type="date"] {
+  border: 1px solid var(--ice-200);
+  border-radius: 8px;
+  background-color: var(--ice-50);
+  color: var(--navy-950);
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="date"]:focus {
+  border-color: var(--teal-600);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+/* --- Card & Button Micro-Interactions --- */
+.party-kpi-card,
+.waterfall-card,
+.summary-box,
+.product-settings-card {
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.party-kpi-card:hover,
+.waterfall-card:hover,
+.summary-box:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* --- Sticky Actions Column for Mobile Tables --- */
+@media (max-width: 640px) {
+  .responsive-table table th:last-child,
+  .responsive-table table td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--white);
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
+    z-index: 2;
+  }
+}
+
 
