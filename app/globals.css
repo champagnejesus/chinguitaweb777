@@ -76,11 +76,11 @@ body {
   margin: 0;
   background: var(--ice-50);
   color: var(--navy-950);
-  font-family: var(--font-hanken-grotesk), var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
 h1, h2, h3, .metric-card > strong, .brand strong {
-  font-family: var(--font-hanken-grotesk), var(--font-outfit), Arial, sans-serif;
+  font-family: var(--font-outfit), var(--font-geist-sans), system-ui, sans-serif;
 }
 
 .login-page,.splash{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 85% 10%,rgba(22,184,176,.2),transparent 30rem),linear-gradient(145deg,#f7fbfc,#eaf5f6);transition: background 0.3s ease;}
@@ -578,6 +578,43 @@ select:focus-visible {
   gap: 0;
   padding: 0 24px;
   border-bottom: 1px solid var(--ice-200);
+}
+
+.directory-card-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-600);
+  background: var(--ice-100);
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rank-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--ice-100);
+  color: var(--navy-900);
+}
+
+.rank-badge.rank-1 {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.rank-badge.rank-2 {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.rank-badge.rank-3 {
+  background: #ffedd5;
+  color: #c2410c;
 }
 
 .surface-tab {

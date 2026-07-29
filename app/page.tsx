@@ -842,9 +842,9 @@ function ProfitabilityTabContent({ state }: { state: State }) {
       <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className={`date-preset-pill ${marginFilter === "todos" ? "active" : ""}`} onClick={() => setMarginFilter("todos")}>Todos</button>
-          <button className={`date-preset-pill ${marginFilter === "alto" ? "active" : ""}`} onClick={() => setMarginFilter("alto")}>🟢 Alto (&gt;30%)</button>
-          <button className={`date-preset-pill ${marginFilter === "normal" ? "active" : ""}`} onClick={() => setMarginFilter("normal")}>🔵 Normal (15-30%)</button>
-          <button className={`date-preset-pill ${marginFilter === "riesgo" ? "active" : ""}`} onClick={() => setMarginFilter("riesgo")}>🔴 Riesgo (&lt;15%)</button>
+          <button className={`date-preset-pill ${marginFilter === "alto" ? "active" : ""}`} onClick={() => setMarginFilter("alto")}>Alto (&gt;30%)</button>
+          <button className={`date-preset-pill ${marginFilter === "normal" ? "active" : ""}`} onClick={() => setMarginFilter("normal")}>Normal (15-30%)</button>
+          <button className={`date-preset-pill ${marginFilter === "riesgo" ? "active" : ""}`} onClick={() => setMarginFilter("riesgo")}>Riesgo (&lt;15%)</button>
         </div>
         <select className="toolbar-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
           <option value="todas">Todas las categorías</option>
@@ -940,7 +940,7 @@ function ProfitabilityTabContent({ state }: { state: State }) {
                 <td className="text-right font-semibold">{p.marginPercent.toFixed(1)}%</td>
                 <td className="text-center">
                   <span className={`health-badge ${p.marginPercent >= 30 ? "high" : p.marginPercent >= 15 ? "normal" : "risk"}`}>
-                    {p.marginPercent >= 30 ? "🟢 Excelente" : p.marginPercent >= 15 ? "🔵 Normal" : "🔴 En Riesgo (<15%)"}
+                    {p.marginPercent >= 30 ? "Excelente" : p.marginPercent >= 15 ? "Normal" : "En Riesgo (<15%)"}
                   </span>
                 </td>
               </tr>
@@ -1022,10 +1022,16 @@ function MonthlySummaryTabContent({ state }: { state: State }) {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 12, fontSize: 12, fontWeight: 700 }}>
-          <span style={{ color: "#1e8e3e" }}>■ Ventas</span>
-          <span style={{ color: "var(--cyan-600)" }}>■ Compras</span>
-          <span style={{ color: "var(--coral-600)" }}>■ Utilidad</span>
+        <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 12, fontSize: 12, fontWeight: 600, color: "var(--navy-900)" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "#10b981" }}></span> Ventas
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--teal-600)" }}></span> Compras
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--coral-600)" }}></span> Utilidad
+          </span>
         </div>
       </div>
 
@@ -1449,8 +1455,8 @@ function Dashboard({
                 return (
                   <div className="progress-row" key={p.id}>
                     <div className="progress-label">
-                      {i === 0 ? <span className="trophy gold">🏆</span> : i === 1 ? <span className="trophy silver">🥈</span> : i === 2 ? <span className="trophy bronze">🥉</span> : <span className="rank-num">{i + 1}</span>}
-                      {p.name}
+                      <span className={`rank-badge rank-${i + 1}`}>{i + 1}</span>
+                      <span style={{ fontWeight: 600, color: "var(--navy-900)" }}>{p.name}</span>
                     </div>
                     <div className="progress-bar-bg">
                       <div className="progress-bar-fill" style={{ width: `${pct}%` }}></div>
@@ -2126,7 +2132,7 @@ function PartyProfileModal({
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <span className={`badge-debt ${pendingBalance > 0 ? "pending" : "ok"}`}>
-              {pendingBalance > 0 ? `Saldo Pendiente: ${money(pendingBalance)}` : "✔ Al día sin deuda"}
+              {pendingBalance > 0 ? `Saldo Pendiente: ${money(pendingBalance)}` : "Al día sin deuda"}
             </span>
             <button className="secondary-button compact" onClick={() => { onClose(); onEdit(party); }} title={`Editar ${kind}`}>
               <Edit size={14} /> Editar
@@ -2157,11 +2163,11 @@ function PartyProfileModal({
 
         {topProducts.length > 0 && (
           <div style={{ marginBottom: 20, background: "var(--ice-50)", padding: "12px 16px", borderRadius: 12, border: "1px solid var(--ice-200)" }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--slate-500)", textTransform: "uppercase" }}>Productos más solicitados / suministrados:</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--slate-500)", textTransform: "uppercase" }}>Productos más solicitados / suministrados:</span>
             <div style={{ display: "flex", gap: 16, marginTop: 6, flexWrap: "wrap" }}>
               {topProducts.map(([pName, qty]) => (
-                <span key={pName} style={{ fontSize: 13, fontWeight: 700, color: "var(--navy-900)" }}>
-                  📦 {pName}: <strong>{qty} unidades/cajas</strong>
+                <span key={pName} style={{ fontSize: 13, fontWeight: 600, color: "var(--navy-900)", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <Package size={14} style={{ color: "var(--teal-600)" }} /> {pName}: {qty} unidades/cajas
                 </span>
               ))}
             </div>
