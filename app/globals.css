@@ -2529,6 +2529,22 @@ td small {
     font-size: 19px;
   }
 
+  .surface-tabs {
+    overflow-x: auto;
+    padding: 0 18px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    gap: 0;
+  }
+
+  .panel-body {
+    padding: 16px;
+  }
+
+  .bottom-widgets {
+    grid-template-columns: 1fr;
+  }
+
   .activity-list {
     padding: 0 18px 10px;
   }
@@ -2547,6 +2563,19 @@ td small {
   .activity-row .status,
   .row-arrow {
     display: none;
+  }
+
+  .summary-box {
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .summary-donut-area {
+    padding-left: 0;
+    border-left: none;
+    width: 100%;
+    justify-content: center;
   }
 
   .stock-alerts {
@@ -2581,6 +2610,68 @@ td small {
 
   .section-toolbar .toolbar-group-right {
     flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-toolbar .toolbar-group-right .primary-button,
+  .section-toolbar .toolbar-group-right .secondary-button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .section-toolbar .toolbar-group-right .export-menu-container {
+    flex: 1;
+  }
+
+  .section-toolbar .toolbar-group-right .export-menu-container .secondary-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-input-wrapper {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .toolbar-search {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .toolbar-group-left .toolbar-select-pill {
+    flex: 1;
+  }
+
+  .toolbar-group-left .toolbar-select-pill select {
+    width: 100%;
+  }
+
+  .toolbar-segmented-track {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .waterfall-bars {
+    height: 140px;
+  }
+
+  .heatmap-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-dates {
+    width: 100%;
+  }
+
+  .toolbar-dates input[type="date"] {
+    flex: 1;
+    min-width: 0;
   }
 
   .inventory-toolbar {
@@ -3401,16 +3492,6 @@ input[type="date"]:focus {
   box-shadow: var(--shadow-md);
 }
 
-/* --- Sticky Actions Column for Mobile Tables --- */
-@media (max-width: 640px) {
-  .responsive-table table th:last-child,
-  .responsive-table table td:last-child {
-    position: sticky;
-    right: 0;
-    background: var(--white);
-    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
-    z-index: 2;
-  }
-}
+
 
 
