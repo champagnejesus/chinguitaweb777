@@ -2946,3 +2946,129 @@ td small {
   background: #ecfdf5;
   color: #10b981;
 }
+
+/* --- Heatmap Matrix --- */
+.heatmap-container {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  align-items: center;
+}
+
+.heatmap-cell {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+  transition: transform 0.15s ease;
+}
+
+.heatmap-cell:hover {
+  transform: translateY(-2px);
+}
+
+.heatmap-cell.high {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.heatmap-cell.mid {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.heatmap-cell.low {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* --- Waterfall Chart --- */
+.waterfall-card {
+  background: var(--white);
+  border: 1px solid var(--ice-200);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.waterfall-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  height: 210px;
+  padding-top: 20px;
+  border-bottom: 1px solid var(--ice-200);
+}
+
+.waterfall-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.waterfall-bar {
+  width: 100%;
+  max-width: 68px;
+  border-radius: 8px 8px 0 0;
+  transition: height 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  padding: 4px 0;
+}
+
+/* --- Traffic Light Badges --- */
+.health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.health-badge.high {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.health-badge.normal {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.health-badge.risk {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* --- Comparative 3-Month Table --- */
+.compare-table th, .compare-table td {
+  text-align: right;
+}
+
+.compare-table th:first-child, .compare-table td:first-child {
+  text-align: left;
+}

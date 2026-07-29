@@ -159,3 +159,64 @@ export function accountRows(rows: Movement[], state: State, kind: "Compra" | "Ve
     Usuario: m.user,
   }));
 }
+
+export function getProductSalesBreakdown(movements: Movement[], state: State) {
+  const sales = movements.filter((m) => m.kind === "Venta");
+  const map: Record<string, { product: Product; qtyUnits: number; qtyBoxes: number; totalSales: number; totalCost: number }> = {};
+
+  sales.forEach((m) => {
+    const product = state.products.find((p) => p.id === m.productId);
+    if (!product) return;
+    if (!map[m.productId]) {
+      map[m.productId] = { product, qtyUnits: 0, qtyBoxes: 0, totalSales: 0, totalCost: 0 };
+    }
+    if (m.unit === "caja") {
+      map[m.productId].qtyBoxes += m.quantity;
+    } else {
+      map[m.productId].qtyUnits += m.quantity;
+    }
+    map[m.productId].totalSales += m.total;
+    const unitCost = unitCostForMovement(m, product);
+    map[m.productId].totalCost += m.quantity * unitCost;
+  });
+
+  return Object.values(map).map((item) => {
+    const profit = item.totalSales - item.totalCost;
+    const marginPercent = item.totalSales > 0 ? (profit / item.totalSales) * 100 : 0;
+    const totalQty = item.qtyUnits + item.qtyBoxes;
+    const avgPrice = totalQty > 0 ? item.totalSales / totalQty : 0;
+    return {
+      ...item,
+      profit,
+      marginPercent,
+      avgPrice,
+    };
+  });
+}
+
+export function get12MonthsBreakdown(movements: Movement[]) {
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthLabel = d.toLocaleString("es-CL", { month: "short", year: "2-digit" });
+    const monthSales = movements.filter((m) => m.kind === "Venta" && m.date.startsWith(yearMonth));
+    const monthPurchases = movements.filter((m) => m.kind === "Compra" && m.date.startsWith(yearMonth));
+    const ventas = monthSales.reduce((s, m) => s + m.total, 0);
+    const compras = monthPurchases.reduce((s, m) => s + m.total, 0);
+    const utilidad = ventas - compras;
+    const countVentas = monthSales.length;
+    const ticketPromedio = countVentas > 0 ? ventas / countVentas : 0;
+    months.push({
+      yearMonth,
+      label: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+      ventas,
+      compras,
+      utilidad,
+      countVentas,
+      ticketPromedio,
+    });
+  }
+  return months;
+}

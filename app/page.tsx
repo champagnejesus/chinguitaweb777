@@ -4,7 +4,7 @@ import { AlertTriangle, Boxes, Building2, ChevronDown, CircleDollarSign, Edit, F
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Section, Presentation, Product, Party, Movement, State, ExportRow, ModalKind } from "../lib/types";
-import { money, dateToday, getDatePresets, productValue, unitCostForMovement, partyName, productName, computeTrend, formatTrend, exportExcel, exportPdf, movementRows as buildMovementRows, activityRows as buildActivityRows, accountRows as buildAccountRows } from "../lib/utils";
+import { money, dateToday, getDatePresets, getProductSalesBreakdown, get12MonthsBreakdown, productValue, unitCostForMovement, partyName, productName, computeTrend, formatTrend, exportExcel, exportPdf, movementRows as buildMovementRows, activityRows as buildActivityRows, accountRows as buildAccountRows } from "../lib/utils";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { AddProductModal } from "../components/AddProductModal";
 import { ImportCsvModal } from "../components/ImportCsvModal";
@@ -573,6 +573,429 @@ function ExportActions({ title, rows }: { title: string; rows: ExportRow[] }) {
   );
 }
 
+function SalesTabContent({ state, onNavigate }: { state: State; onNavigate: (s: Section) => void }) {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("todas");
+
+  const salesMovs = state.movements.filter((m) => {
+    if (m.kind !== "Venta") return false;
+    const p = state.products.find((x) => x.id === m.productId);
+    const pName = productName(m, state);
+    const partName = partyName(m, state);
+    const matchSearch = !search || pName.toLowerCase().includes(search.toLowerCase()) || partName.toLowerCase().includes(search.toLowerCase());
+    const matchStart = !startDate || m.date >= startDate;
+    const matchEnd = !endDate || m.date <= endDate;
+    const matchCategory = selectedCategory === "todas" || p?.category === selectedCategory;
+    return matchSearch && matchStart && matchEnd && matchCategory;
+  });
+
+  const totalVentas = salesMovs.reduce((s, m) => s + m.total, 0);
+  const totalCost = salesMovs.reduce((s, m) => {
+    const p = state.products.find((x) => x.id === m.productId);
+    return s + m.quantity * unitCostForMovement(m, p);
+  }, 0);
+  const utilidadBruta = totalVentas - totalCost;
+  const margenBruto = totalVentas > 0 ? (utilidadBruta / totalVentas) * 100 : 0;
+  const ticketPromedio = salesMovs.length > 0 ? totalVentas / salesMovs.length : 0;
+  const uniqueClients = new Set(salesMovs.map((m) => m.partyId)).size;
+  const avgPerClient = uniqueClients > 0 ? totalVentas / uniqueClients : 0;
+
+  const categories = Array.from(new Set(state.products.map((p) => p.category).filter(Boolean))) as string[];
+  const productPerformance = getProductSalesBreakdown(salesMovs, state);
+
+  const exportData = productPerformance.map((p) => ({
+    Producto: p.product.name,
+    Categoría: p.product.category || "Sin categoría",
+    "Unidades Vendidas": p.qtyUnits,
+    "Cajas Vendidas": p.qtyBoxes,
+    "Precio Promed.": money(p.avgPrice),
+    "Total Ventas": money(p.totalSales),
+    "Costo Total": money(p.totalCost),
+    "Utilidad Generada": money(p.profit),
+    "Margen %": `${p.marginPercent.toFixed(1)}%`,
+  }));
+
+  return (
+    <div>
+      <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <SearchBar value={search} onChange={setSearch} placeholder="Buscar venta por producto o cliente..." />
+        </div>
+        <select className="toolbar-select" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+          <option value="todas">Todas las categorías</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <DatePresetsToolbar startDate={startDate} endDate={endDate} onRangeChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
+        <ExportActions title="Detalle-Rendimiento-Ventas" rows={exportData} />
+      </div>
+
+      <div className="party-kpi-cards" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginBottom: 20 }}>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Total Facturado</span>
+          <span className="kpi-val" style={{ color: "#1e8e3e" }}>{money(totalVentas)}</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Costo de Ventas (COGS)</span>
+          <span className="kpi-val" style={{ color: "var(--cyan-600)" }}>{money(totalCost)}</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Margen Bruto</span>
+          <span className="kpi-val" style={{ color: "var(--coral-600)" }}>{money(utilidadBruta)} ({margenBruto.toFixed(1)}%)</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Ticket Promedio</span>
+          <span className="kpi-val" style={{ color: "var(--navy-900)" }}>{money(ticketPromedio)}</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Promedio por Cliente</span>
+          <span className="kpi-val" style={{ color: "var(--violet-600)" }}>{money(avgPerClient)}</span>
+        </div>
+      </div>
+
+      <h3 className="operations-table-title" style={{ marginBottom: 12 }}>Detalle de Rendimiento de Ventas por Producto</h3>
+      <div className="responsive-table">
+        <table>
+          <thead>
+            <tr>
+              <th>PRODUCTO</th>
+              <th>CATEGORÍA</th>
+              <th className="text-right">UNIDADES</th>
+              <th className="text-right">CAJAS</th>
+              <th className="text-right">PRECIO PROM.</th>
+              <th className="text-right">TOTAL VENTAS</th>
+              <th className="text-right">COSTO TOTAL</th>
+              <th className="text-right">UTILIDAD</th>
+              <th className="text-right">MARGEN %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productPerformance.map((item) => (
+              <tr key={item.product.id}>
+                <td><strong>{item.product.name}</strong></td>
+                <td>{item.product.category || "—"}</td>
+                <td className="text-right">{item.qtyUnits}</td>
+                <td className="text-right">{item.qtyBoxes}</td>
+                <td className="text-right">{money(item.avgPrice)}</td>
+                <td className="text-right font-semibold" style={{ color: "#1e8e3e" }}>{money(item.totalSales)}</td>
+                <td className="text-right">{money(item.totalCost)}</td>
+                <td className="text-right font-semibold" style={{ color: "var(--coral-600)" }}>{money(item.profit)}</td>
+                <td className="text-right font-semibold" style={{ color: item.marginPercent >= 20 ? "#15803d" : "#dc2626" }}>
+                  {item.marginPercent.toFixed(1)}%
+                </td>
+              </tr>
+            ))}
+            {!productPerformance.length && (
+              <tr>
+                <td colSpan={9} className="empty-state">No hay ventas registradas en el período seleccionado.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ProfitabilityTabContent({ state }: { state: State }) {
+  const [marginFilter, setMarginFilter] = useState<"todos" | "alto" | "normal" | "riesgo">("todos");
+  const [categoryFilter, setCategoryFilter] = useState("todas");
+
+  const sales = state.movements.filter((m) => m.kind === "Venta");
+  const adjustments = state.movements.filter((m) => m.kind === "Ajuste");
+
+  const productBreakdown = getProductSalesBreakdown(state.movements, state);
+  const categories = Array.from(new Set(state.products.map((p) => p.category).filter(Boolean))) as string[];
+
+  const filteredProducts = productBreakdown.filter((item) => {
+    const matchCategory = categoryFilter === "todas" || item.product.category === categoryFilter;
+    let matchMargin = true;
+    if (marginFilter === "alto") matchMargin = item.marginPercent >= 30;
+    else if (marginFilter === "normal") matchMargin = item.marginPercent >= 15 && item.marginPercent < 30;
+    else if (marginFilter === "riesgo") matchMargin = item.marginPercent < 15;
+    return matchCategory && matchMargin;
+  });
+
+  const totalSales = sales.reduce((s, m) => s + m.total, 0);
+  const totalCost = sales.reduce((s, m) => {
+    const p = state.products.find((x) => x.id === m.productId);
+    return s + m.quantity * unitCostForMovement(m, p);
+  }, 0);
+  const adjustmentCost = adjustments.reduce((s, m) => {
+    const p = state.products.find((x) => x.id === m.productId);
+    return s + Math.abs(m.quantity) * unitCostForMovement(m, p);
+  }, 0);
+  const totalProfit = totalSales - totalCost - adjustmentCost;
+  const globalMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+
+  const starProduct = [...productBreakdown].sort((a, b) => b.profit - a.profit)[0];
+  const riskCount = productBreakdown.filter((p) => p.marginPercent < 15).length;
+
+  const exportData = filteredProducts.map((p) => ({
+    Producto: p.product.name,
+    "Ingresos Totales": money(p.totalSales),
+    "Costo Directo": money(p.totalCost),
+    "Margen Contribución ($)": money(p.profit),
+    "Margen Contribución (%)": `${p.marginPercent.toFixed(1)}%`,
+    "Salud de Margen": p.marginPercent >= 30 ? "Excelente (>30%)" : p.marginPercent >= 15 ? "Normal (15-30%)" : "Riesgo (<15%)",
+  }));
+
+  const heatmapData: { category: string; profit: number; sales: number; margin: number }[] = categories.map((cat) => {
+    const catProds = productBreakdown.filter((p) => p.product.category === cat);
+    const catSales = catProds.reduce((s, p) => s + p.totalSales, 0);
+    const catProfit = catProds.reduce((s, p) => s + p.profit, 0);
+    const catMargin = catSales > 0 ? (catProfit / catSales) * 100 : 0;
+    return { category: cat, profit: catProfit, sales: catSales, margin: catMargin };
+  });
+
+  return (
+    <div>
+      <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className={`date-preset-pill ${marginFilter === "todos" ? "active" : ""}`} onClick={() => setMarginFilter("todos")}>Todos</button>
+          <button className={`date-preset-pill ${marginFilter === "alto" ? "active" : ""}`} onClick={() => setMarginFilter("alto")}>🟢 Alto (&gt;30%)</button>
+          <button className={`date-preset-pill ${marginFilter === "normal" ? "active" : ""}`} onClick={() => setMarginFilter("normal")}>🔵 Normal (15-30%)</button>
+          <button className={`date-preset-pill ${marginFilter === "riesgo" ? "active" : ""}`} onClick={() => setMarginFilter("riesgo")}>🔴 Riesgo (&lt;15%)</button>
+        </div>
+        <select className="toolbar-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <option value="todas">Todas las categorías</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <ExportActions title="Analisis-Rentabilidad-Margen" rows={exportData} />
+      </div>
+
+      <div className="party-kpi-cards" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginBottom: 20 }}>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Margen Bruto Global</span>
+          <span className="kpi-val" style={{ color: "var(--violet-600)" }}>{globalMargin.toFixed(1)}%</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Producto Estrella</span>
+          <span className="kpi-val" style={{ color: "#1e8e3e", fontSize: 15 }}>{starProduct?.product.name || "—"} ({money(starProduct?.profit || 0)})</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Productos en Riesgo</span>
+          <span className="kpi-val" style={{ color: riskCount > 0 ? "#ef4444" : "#10b981" }}>{riskCount} productos</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Costo de Mermas / Ajustes</span>
+          <span className="kpi-val" style={{ color: "var(--coral-600)" }}>{money(adjustmentCost)}</span>
+        </div>
+      </div>
+
+      <div className="waterfall-card">
+        <h4 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 800, color: "var(--navy-900)" }}>
+          Gráfico en Cascada (Waterfall): Flujo de Ingresos a Utilidad Bruta
+        </h4>
+        <div className="waterfall-bars">
+          <div className="waterfall-bar-group">
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#1e8e3e" }}>{money(totalSales)}</span>
+            <div className="waterfall-bar" style={{ height: "100%", background: "#1e8e3e" }}>Ventas</div>
+            <span style={{ fontSize: 11, color: "var(--slate-500)" }}>Ingresos</span>
+          </div>
+          <div className="waterfall-bar-group">
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--cyan-600)" }}>-{money(totalCost)}</span>
+            <div className="waterfall-bar" style={{ height: `${totalSales > 0 ? (totalCost / totalSales) * 100 : 50}%`, background: "var(--cyan-600)" }}>Costos</div>
+            <span style={{ fontSize: 11, color: "var(--slate-500)" }}>COGS</span>
+          </div>
+          <div className="waterfall-bar-group">
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--coral-600)" }}>-{money(adjustmentCost)}</span>
+            <div className="waterfall-bar" style={{ height: `${totalSales > 0 ? Math.max(8, (adjustmentCost / totalSales) * 100) : 10}%`, background: "var(--coral-600)" }}>Mermas</div>
+            <span style={{ fontSize: 11, color: "var(--slate-500)" }}>Ajustes</span>
+          </div>
+          <div className="waterfall-bar-group">
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--violet-600)" }}>{money(totalProfit)}</span>
+            <div className="waterfall-bar" style={{ height: `${totalSales > 0 ? Math.max(12, (totalProfit / totalSales) * 100) : 30}%`, background: "var(--violet-600)" }}>Utilidad</div>
+            <span style={{ fontSize: 11, color: "var(--slate-500)" }}>Neto</span>
+          </div>
+        </div>
+      </div>
+
+      {heatmapData.length > 0 && (
+        <div style={{ marginBottom: 24, background: "var(--ice-50)", padding: 18, borderRadius: 16, border: "1px solid var(--ice-200)" }}>
+          <h4 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 800, color: "var(--navy-900)" }}>Matriz Heatmap de Rentabilidad por Categoría</h4>
+          <div className="heatmap-grid">
+            {heatmapData.map((h) => (
+              <div key={h.category} className={`heatmap-cell ${h.margin >= 30 ? "high" : h.margin >= 15 ? "mid" : "low"}`}>
+                <small style={{ textTransform: "uppercase", fontSize: 10 }}>{h.category}</small>
+                <strong style={{ fontSize: 15 }}>{h.margin.toFixed(1)}%</strong>
+                <span style={{ fontSize: 11, opacity: 0.85 }}>{money(h.profit)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <h3 className="operations-table-title" style={{ marginBottom: 12 }}>Análisis de Margen de Contribución por Producto</h3>
+      <div className="responsive-table">
+        <table>
+          <thead>
+            <tr>
+              <th>PRODUCTO / CATEGORÍA</th>
+              <th className="text-right">INGRESOS TOTALES</th>
+              <th className="text-right">COSTO VARIABLE</th>
+              <th className="text-right">MARGEN CONTRIBUCIÓN ($)</th>
+              <th className="text-right">MARGEN %</th>
+              <th className="text-center">SALUD DE MARGEN</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.map((p) => (
+              <tr key={p.product.id}>
+                <td><strong>{p.product.name}</strong> <small style={{ color: "var(--slate-500)" }}>({p.product.category || "General"})</small></td>
+                <td className="text-right">{money(p.totalSales)}</td>
+                <td className="text-right">{money(p.totalCost)}</td>
+                <td className="text-right font-semibold" style={{ color: "var(--coral-600)" }}>{money(p.profit)}</td>
+                <td className="text-right font-semibold">{p.marginPercent.toFixed(1)}%</td>
+                <td className="text-center">
+                  <span className={`health-badge ${p.marginPercent >= 30 ? "high" : p.marginPercent >= 15 ? "normal" : "risk"}`}>
+                    {p.marginPercent >= 30 ? "🟢 Excelente" : p.marginPercent >= 15 ? "🔵 Normal" : "🔴 En Riesgo (<15%)"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {!filteredProducts.length && (
+              <tr>
+                <td colSpan={6} className="empty-state">No hay registros que coincidan con los criterios.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MonthlySummaryTabContent({ state }: { state: State }) {
+  const monthsData = get12MonthsBreakdown(state.movements);
+  const currentMonth = monthsData[monthsData.length - 1] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, ticketPromedio: 0, label: "Actual" };
+  const prevMonth = monthsData[monthsData.length - 2] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, ticketPromedio: 0, label: "Anterior" };
+  const sameMonthLastYear = monthsData[0] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, ticketPromedio: 0, label: "Año Pasado" };
+
+  const salesMoM = prevMonth.ventas > 0 ? ((currentMonth.ventas - prevMonth.ventas) / prevMonth.ventas) * 100 : 0;
+  const salesYoY = sameMonthLastYear.ventas > 0 ? ((currentMonth.ventas - sameMonthLastYear.ventas) / sameMonthLastYear.ventas) * 100 : 0;
+  const profitMoM = prevMonth.utilidad > 0 ? ((currentMonth.utilidad - prevMonth.utilidad) / prevMonth.utilidad) * 100 : 0;
+  const ticketMoM = prevMonth.ticketPromedio > 0 ? ((currentMonth.ticketPromedio - prevMonth.ticketPromedio) / prevMonth.ticketPromedio) * 100 : 0;
+
+  const maxVal = Math.max(...monthsData.map((m) => Math.max(m.ventas, m.compras, m.utilidad)), 1);
+
+  const exportData = [
+    { Indicador: "Total Ventas Facturadas", Current: money(currentMonth.ventas), Prev: money(prevMonth.ventas), MoM: `${salesMoM.toFixed(1)}%`, YoY: `${salesYoY.toFixed(1)}%` },
+    { Indicador: "Total Compras Realizadas", Current: money(currentMonth.compras), Prev: money(prevMonth.compras), MoM: "—", YoY: "—" },
+    { Indicador: "Utilidad Bruta Generada", Current: money(currentMonth.utilidad), Prev: money(prevMonth.utilidad), MoM: `${profitMoM.toFixed(1)}%`, YoY: "—" },
+    { Indicador: "Ticket Promedio por Venta", Current: money(currentMonth.ticketPromedio), Prev: money(prevMonth.ticketPromedio), MoM: `${ticketMoM.toFixed(1)}%`, YoY: "—" },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <div>
+          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--navy-900)" }}>Panel Comparativo Intermensual (12 Meses)</h3>
+          <p style={{ fontSize: 12, color: "var(--slate-500)", margin: "2px 0 0" }}>Tendencia de ventas, compras y utilidades acumuladas</p>
+        </div>
+        <ExportActions title="Resumen-Mensual-MoM-YoY" rows={exportData} />
+      </div>
+
+      <div className="party-kpi-cards" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginBottom: 20 }}>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Crecimiento MoM Ventas</span>
+          <span className="kpi-val" style={{ color: salesMoM >= 0 ? "#10b981" : "#ef4444" }}>{salesMoM >= 0 ? "+" : ""}{salesMoM.toFixed(1)}%</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Crecimiento YoY Ventas</span>
+          <span className="kpi-val" style={{ color: salesYoY >= 0 ? "#10b981" : "#ef4444" }}>{salesYoY >= 0 ? "+" : ""}{salesYoY.toFixed(1)}%</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Variación MoM Utilidad</span>
+          <span className="kpi-val" style={{ color: profitMoM >= 0 ? "var(--coral-600)" : "#ef4444" }}>{profitMoM >= 0 ? "+" : ""}{profitMoM.toFixed(1)}%</span>
+        </div>
+        <div className="party-kpi-card">
+          <span className="kpi-label">Ticket Promedio MoM</span>
+          <span className="kpi-val" style={{ color: "var(--navy-900)" }}>{ticketMoM >= 0 ? "+" : ""}{ticketMoM.toFixed(1)}%</span>
+        </div>
+      </div>
+
+      <div className="waterfall-card" style={{ marginBottom: 24 }}>
+        <h4 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 800, color: "var(--navy-900)" }}>
+          Evolución Mensual de Operaciones (Últimos 12 Meses)
+        </h4>
+        <div className="waterfall-bars" style={{ height: 220 }}>
+          {monthsData.map((m) => (
+            <div key={m.yearMonth} className="waterfall-bar-group">
+              <div style={{ display: "flex", gap: 3, width: "100%", alignItems: "flex-end", height: "100%" }}>
+                <div title={`Ventas: ${money(m.ventas)}`} style={{ flex: 1, height: `${(m.ventas / maxVal) * 100}%`, background: "#1e8e3e", borderRadius: "4px 4px 0 0" }}></div>
+                <div title={`Compras: ${money(m.compras)}`} style={{ flex: 1, height: `${(m.compras / maxVal) * 100}%`, background: "var(--cyan-600)", borderRadius: "4px 4px 0 0" }}></div>
+                <div title={`Utilidad: ${money(m.utilidad)}`} style={{ flex: 1, height: `${Math.max(4, (m.utilidad / maxVal) * 100)}%`, background: "var(--coral-600)", borderRadius: "4px 4px 0 0" }}></div>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--slate-500)" }}>{m.label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 12, fontSize: 12, fontWeight: 700 }}>
+          <span style={{ color: "#1e8e3e" }}>■ Ventas</span>
+          <span style={{ color: "var(--cyan-600)" }}>■ Compras</span>
+          <span style={{ color: "var(--coral-600)" }}>■ Utilidad</span>
+        </div>
+      </div>
+
+      <h3 className="operations-table-title" style={{ marginBottom: 12 }}>Comparativa Lado a Lado de Indicadores Llave</h3>
+      <div className="responsive-table">
+        <table className="compare-table">
+          <thead>
+            <tr>
+              <th>INDICADOR LLAVE (KPI)</th>
+              <th>MES ACTUAL ({currentMonth.label})</th>
+              <th>MES ANTERIOR ({prevMonth.label})</th>
+              <th>DIFERENCIA MoM</th>
+              <th>AÑO PASADO ({sameMonthLastYear.label})</th>
+              <th>DIFERENCIA YoY</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Total Ventas Facturadas</strong></td>
+              <td className="font-semibold" style={{ color: "#1e8e3e" }}>{money(currentMonth.ventas)}</td>
+              <td>{money(prevMonth.ventas)}</td>
+              <td className="font-semibold" style={{ color: salesMoM >= 0 ? "#10b981" : "#ef4444" }}>{salesMoM >= 0 ? "+" : ""}{salesMoM.toFixed(1)}%</td>
+              <td>{money(sameMonthLastYear.ventas)}</td>
+              <td className="font-semibold" style={{ color: salesYoY >= 0 ? "#10b981" : "#ef4444" }}>{salesYoY >= 0 ? "+" : ""}{salesYoY.toFixed(1)}%</td>
+            </tr>
+            <tr>
+              <td><strong>Total Compras Realizadas</strong></td>
+              <td className="font-semibold" style={{ color: "var(--cyan-600)" }}>{money(currentMonth.compras)}</td>
+              <td>{money(prevMonth.compras)}</td>
+              <td>—</td>
+              <td>{money(sameMonthLastYear.compras)}</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><strong>Utilidad Bruta Generada</strong></td>
+              <td className="font-semibold" style={{ color: "var(--coral-600)" }}>{money(currentMonth.utilidad)}</td>
+              <td>{money(prevMonth.utilidad)}</td>
+              <td className="font-semibold" style={{ color: profitMoM >= 0 ? "var(--coral-600)" : "#ef4444" }}>{profitMoM >= 0 ? "+" : ""}{profitMoM.toFixed(1)}%</td>
+              <td>{money(sameMonthLastYear.utilidad)}</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><strong>Ticket Promedio por Venta</strong></td>
+              <td className="font-semibold">{money(currentMonth.ticketPromedio)}</td>
+              <td>{money(prevMonth.ticketPromedio)}</td>
+              <td className="font-semibold">{ticketMoM >= 0 ? "+" : ""}{ticketMoM.toFixed(1)}%</td>
+              <td>{money(sameMonthLastYear.ticketPromedio)}</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({
   state,
   onNavigate,
@@ -759,162 +1182,169 @@ function Dashboard({
           </div>
 
           <div className="panel-body">
-            <div className="toolbar-row">
-              <SearchBar value={search} onChange={setSearch} placeholder="Buscar por producto, cliente, proveedor o documento..." />
-              <div className="toolbar-actions">
-                <select className="toolbar-select" value={opFilter} onChange={(e) => setOpFilter(e.target.value as "todas" | "Compra" | "Venta" | "Ajuste")}>
-                  <option value="todas">Todas las operaciones</option>
-                  <option value="Compra">Solo Compras</option>
-                  <option value="Venta">Solo Ventas</option>
-                  <option value="Ajuste">Solo Ajustes</option>
-                </select>
-                <div className="toolbar-dates">
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                  <span className="toolbar-dates-sep">al</span>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            {activeTab === "ventas" && <SalesTabContent state={state} onNavigate={onNavigate} />}
+            {activeTab === "rentabilidad" && <ProfitabilityTabContent state={state} />}
+            {activeTab === "resumen" && <MonthlySummaryTabContent state={state} />}
+            {activeTab === "auditoria" && (
+              <div>
+                <div className="toolbar-row">
+                  <SearchBar value={search} onChange={setSearch} placeholder="Buscar por producto, cliente, proveedor o documento..." />
+                  <div className="toolbar-actions">
+                    <select className="toolbar-select" value={opFilter} onChange={(e) => setOpFilter(e.target.value as "todas" | "Compra" | "Venta" | "Ajuste")}>
+                      <option value="todas">Todas las operaciones</option>
+                      <option value="Compra">Solo Compras</option>
+                      <option value="Venta">Solo Ventas</option>
+                      <option value="Ajuste">Solo Ajustes</option>
+                    </select>
+                    <div className="toolbar-dates">
+                      <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                      <span className="toolbar-dates-sep">al</span>
+                      <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                    </div>
+                    <ExportActions title="Actividad-reciente" rows={buildActivityRows(filteredMovs, state)} />
+                    <button className="secondary-button compact" onClick={onRefresh} title="Actualizar datos">
+                      <RefreshCw size={16} />
+                    </button>
+                  </div>
                 </div>
-                <ExportActions title="Actividad-reciente" rows={buildActivityRows(filteredMovs, state)} />
-                <button className="secondary-button compact" onClick={onRefresh} title="Actualizar datos">
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-            </div>
 
-            <div className="summary-box">
-              <div className="summary-left">
-                <h3 className="summary-title">Resumen del período seleccionado</h3>
-                <div className="summary-equation">
-                  <div className="summary-agg">
-                    <small>Total Comprado</small>
-                    <strong style={{ color: "var(--cyan-600)" }}>{money(totalCompra)}</strong>
+                <div className="summary-box">
+                  <div className="summary-left">
+                    <h3 className="summary-title">Resumen del período seleccionado</h3>
+                    <div className="summary-equation">
+                      <div className="summary-agg">
+                        <small>Total Comprado</small>
+                        <strong style={{ color: "var(--cyan-600)" }}>{money(totalCompra)}</strong>
+                      </div>
+                      <span className="summary-operator">-</span>
+                      <div className="summary-agg">
+                        <small>Total Vendido</small>
+                        <strong style={{ color: "#1e8e3e" }}>{money(totalVenta)}</strong>
+                      </div>
+                      <span className="summary-operator">=</span>
+                      <div className="summary-agg">
+                        <small>Utilidad Bruta</small>
+                        <strong style={{ color: "var(--coral-600)" }}>{money(utilidadBruta)}</strong>
+                      </div>
+                      <div className="summary-divider"></div>
+                      <div className="summary-agg">
+                        <small>Margen de Utilidad</small>
+                        <strong style={{ color: "var(--violet-600)" }}>{margen.toFixed(1)}%</strong>
+                      </div>
+                    </div>
                   </div>
-                  <span className="summary-operator">-</span>
-                  <div className="summary-agg">
-                    <small>Total Vendido</small>
-                    <strong style={{ color: "#1e8e3e" }}>{money(totalVenta)}</strong>
-                  </div>
-                  <span className="summary-operator">=</span>
-                  <div className="summary-agg">
-                    <small>Utilidad Bruta</small>
-                    <strong style={{ color: "var(--coral-600)" }}>{money(utilidadBruta)}</strong>
-                  </div>
-                  <div className="summary-divider"></div>
-                  <div className="summary-agg">
-                    <small>Margen de Utilidad</small>
-                    <strong style={{ color: "var(--violet-600)" }}>{margen.toFixed(1)}%</strong>
+                  <div className="summary-donut-area">
+                    <div className="donut-chart">
+                      <svg viewBox="0 0 36 36">
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15.915"
+                          fill="transparent"
+                          stroke="#12b5cb"
+                          strokeWidth="4"
+                          strokeDasharray={`${totalVenta + totalCompra > 0 ? (totalCompra / (totalVenta + totalCompra)) * 100 : 44} ${totalVenta + totalCompra > 0 ? (totalVenta / (totalVenta + totalCompra)) * 100 : 56}`}
+                          strokeDashoffset="0"
+                        />
+                        <circle
+                          cx="18"
+                          cy="18"
+                          r="15.915"
+                          fill="transparent"
+                          stroke="#1e8e3e"
+                          strokeWidth="4"
+                          strokeDasharray={`${totalVenta + totalCompra > 0 ? (totalVenta / (totalVenta + totalCompra)) * 100 : 56} ${totalVenta + totalCompra > 0 ? (totalCompra / (totalVenta + totalCompra)) * 100 : 44}`}
+                          strokeDashoffset={`-${totalVenta + totalCompra > 0 ? (totalCompra / (totalVenta + totalCompra)) * 100 : 44}`}
+                        />
+                      </svg>
+                    </div>
+                    <div className="donut-legend">
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ background: "#12b5cb" }}></span>Compras
+                        <span className="legend-val">{totalVenta + totalCompra > 0 ? ((totalCompra / (totalVenta + totalCompra)) * 100).toFixed(1) : "0"}%</span>
+                      </div>
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ background: "#1e8e3e" }}></span>Ventas
+                        <span className="legend-val">{totalVenta + totalCompra > 0 ? ((totalVenta / (totalVenta + totalCompra)) * 100).toFixed(1) : "0"}%</span>
+                      </div>
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ background: "#d93025" }}></span>Utilidad
+                        <span className="legend-val">{margen.toFixed(1)}%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="summary-donut-area">
-                <div className="donut-chart">
-                  <svg viewBox="0 0 36 36">
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15.915"
-                      fill="transparent"
-                      stroke="#12b5cb"
-                      strokeWidth="4"
-                      strokeDasharray={`${totalVenta + totalCompra > 0 ? (totalCompra / (totalVenta + totalCompra)) * 100 : 44} ${totalVenta + totalCompra > 0 ? (totalVenta / (totalVenta + totalCompra)) * 100 : 56}`}
-                      strokeDashoffset="0"
-                    />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15.915"
-                      fill="transparent"
-                      stroke="#1e8e3e"
-                      strokeWidth="4"
-                      strokeDasharray={`${totalVenta + totalCompra > 0 ? (totalVenta / (totalVenta + totalCompra)) * 100 : 56} ${totalVenta + totalCompra > 0 ? (totalCompra / (totalVenta + totalCompra)) * 100 : 44}`}
-                      strokeDashoffset={`-${totalVenta + totalCompra > 0 ? (totalCompra / (totalVenta + totalCompra)) * 100 : 44}`}
-                    />
-                  </svg>
-                </div>
-                <div className="donut-legend">
-                  <div className="legend-item">
-                    <span className="legend-dot" style={{ background: "#12b5cb" }}></span>Compras
-                    <span className="legend-val">{totalVenta + totalCompra > 0 ? ((totalCompra / (totalVenta + totalCompra)) * 100).toFixed(1) : "0"}%</span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-dot" style={{ background: "#1e8e3e" }}></span>Ventas
-                    <span className="legend-val">{totalVenta + totalCompra > 0 ? ((totalVenta / (totalVenta + totalCompra)) * 100).toFixed(1) : "0"}%</span>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-dot" style={{ background: "#d93025" }}></span>Utilidad
-                    <span className="legend-val">{margen.toFixed(1)}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="operations-table-wrap">
-              <h3 className="operations-table-title">Historial de operaciones</h3>
-              <div className="responsive-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>FECHA</th>
-                      <th>TIPO</th>
-                      <th>DOCUMENTO</th>
-                      <th>PRODUCTO</th>
-                      <th>PROVEEDOR / CLIENTE</th>
-                      <th className="text-right">CANT.</th>
-                      <th className="text-right">COSTO UNIT.</th>
-                      <th className="text-right">VENTA UNIT.</th>
-                      <th className="text-right">TOTAL</th>
-                      <th className="text-right">UTILIDAD</th>
-                      <th className="text-right">MARGEN</th>
-                      <th className="text-center">ACCIONES</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMovs.map((m, i) => {
-                      const p = state.products.find((x) => x.id === m.productId);
-                      const cost = unitCostForMovement(m, p);
-                      const unitCost = m.quantity > 0 ? cost : 0;
-                      const saleUnit = m.quantity > 0 ? m.total / m.quantity : 0;
-                      const util = m.kind === "Venta" ? m.total - m.quantity * cost : 0;
-                      const gm = m.total > 0 ? (util / m.total) * 100 : 0;
-                      const docNum = String(i + 1).padStart(4, "0");
-                      const docPrefix = m.kind === "Venta" ? "FV" : m.kind === "Compra" ? "FC" : "AJ";
-                      return (
-                        <tr key={m.id}>
-                          <td>{m.date}</td>
-                          <td>
-                            <span className={`type-badge ${m.kind.toLowerCase()}`}>{m.kind === "Ajuste" ? "Ajuste" : m.kind}</span>
-                          </td>
-                          <td>{docPrefix}-{docNum}</td>
-                          <td>{productName(m, state)}</td>
-                          <td>{partyName(m, state)}</td>
-                          <td className="text-right">{m.quantity}</td>
-                          <td className="text-right">{money(unitCost)}</td>
-                          <td className="text-right">{m.kind === "Venta" ? money(saleUnit) : "—"}</td>
-                          <td className="text-right font-semibold">{money(m.total)}</td>
-                          <td className="text-right font-semibold" style={{ color: m.kind === "Venta" ? "#1e8e3e" : "var(--slate-400)" }}>
-                            {m.kind === "Venta" ? money(util) : "—"}
-                          </td>
-                          <td className="text-right font-semibold" style={{ color: m.kind === "Venta" ? "#1e8e3e" : "var(--slate-400)" }}>
-                            {m.kind === "Venta" ? `${gm.toFixed(0)}%` : "—"}
-                          </td>
-                          <td className="text-center">
-                            <button className="icon-button-sm" onClick={() => onNavigate(m.kind === "Venta" ? "ventas" : "compras")} title="Ver detalle">
-                              <Eye size={16} />
-                            </button>
-                          </td>
+                <div className="operations-table-wrap">
+                  <h3 className="operations-table-title">Historial de operaciones</h3>
+                  <div className="responsive-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>FECHA</th>
+                          <th>TIPO</th>
+                          <th>DOCUMENTO</th>
+                          <th>PRODUCTO</th>
+                          <th>PROVEEDOR / CLIENTE</th>
+                          <th className="text-right">CANT.</th>
+                          <th className="text-right">COSTO UNIT.</th>
+                          <th className="text-right">VENTA UNIT.</th>
+                          <th className="text-right">TOTAL</th>
+                          <th className="text-right">UTILIDAD</th>
+                          <th className="text-right">MARGEN</th>
+                          <th className="text-center">ACCIONES</th>
                         </tr>
-                      );
-                    })}
-                    {!filteredMovs.length && (
-                      <tr>
-                        <td colSpan={12} className="empty-state">
-                          Aún no hay movimientos.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {filteredMovs.map((m, i) => {
+                          const p = state.products.find((x) => x.id === m.productId);
+                          const cost = unitCostForMovement(m, p);
+                          const unitCost = m.quantity > 0 ? cost : 0;
+                          const saleUnit = m.quantity > 0 ? m.total / m.quantity : 0;
+                          const util = m.kind === "Venta" ? m.total - m.quantity * cost : 0;
+                          const gm = m.total > 0 ? (util / m.total) * 100 : 0;
+                          const docNum = String(i + 1).padStart(4, "0");
+                          const docPrefix = m.kind === "Venta" ? "FV" : m.kind === "Compra" ? "FC" : "AJ";
+                          return (
+                            <tr key={m.id}>
+                              <td>{m.date}</td>
+                              <td>
+                                <span className={`type-badge ${m.kind.toLowerCase()}`}>{m.kind === "Ajuste" ? "Ajuste" : m.kind}</span>
+                              </td>
+                              <td>{docPrefix}-{docNum}</td>
+                              <td>{productName(m, state)}</td>
+                              <td>{partyName(m, state)}</td>
+                              <td className="text-right">{m.quantity}</td>
+                              <td className="text-right">{money(unitCost)}</td>
+                              <td className="text-right">{m.kind === "Venta" ? money(saleUnit) : "—"}</td>
+                              <td className="text-right font-semibold">{money(m.total)}</td>
+                              <td className="text-right font-semibold" style={{ color: m.kind === "Venta" ? "#1e8e3e" : "var(--slate-400)" }}>
+                                {m.kind === "Venta" ? money(util) : "—"}
+                              </td>
+                              <td className="text-right font-semibold" style={{ color: m.kind === "Venta" ? "#1e8e3e" : "var(--slate-400)" }}>
+                                {m.kind === "Venta" ? `${gm.toFixed(0)}%` : "—"}
+                              </td>
+                              <td className="text-center">
+                                <button className="icon-button-sm" onClick={() => onNavigate(m.kind === "Venta" ? "ventas" : "compras")} title="Ver detalle">
+                                  <Eye size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {!filteredMovs.length && (
+                          <tr>
+                            <td colSpan={12} className="empty-state">
+                              Aún no hay movimientos.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </article>
 
