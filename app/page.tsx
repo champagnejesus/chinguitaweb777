@@ -11,8 +11,8 @@ import { ImportCsvModal } from "../components/ImportCsvModal";
 import { ToastContainer, ToastItem } from "../components/ui/Toast";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { SearchBar } from "../components/ui/SearchBar";
-import { Brand } from "./components/ui/Brand";
-import { ExportActions } from "./components/ui/ExportActions";
+import { Brand } from "../components/ui/Brand";
+import { ExportActions } from "../components/ui/ExportActions";
 import { useSession } from "../hooks/useSession";
 
 const emptyState: State = {
