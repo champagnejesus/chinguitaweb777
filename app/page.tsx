@@ -588,9 +588,8 @@ function SalesTabContent({ state, onNavigate }: { state: State; onNavigate: (s: 
   }, 0);
   const utilidadBruta = totalVentas - totalCost;
   const margenBruto = totalVentas > 0 ? (utilidadBruta / totalVentas) * 100 : 0;
-  const ticketPromedio = salesMovs.length > 0 ? totalVentas / salesMovs.length : 0;
-  const uniqueClients = new Set(salesMovs.map((m) => m.partyId)).size;
-  const avgPerClient = uniqueClients > 0 ? totalVentas / uniqueClients : 0;
+  const cuentasPorCobrar = state.movements.filter((m) => m.kind === "Venta" && m.total > m.paid).reduce((s, m) => s + (m.total - m.paid), 0);
+  const cuentasPorPagar = state.movements.filter((m) => m.kind === "Compra" && m.total > m.paid).reduce((s, m) => s + (m.total - m.paid), 0);
 
   const categories = Array.from(new Set(state.products.map((p) => p.category).filter(Boolean))) as string[];
   const productPerformance = getProductSalesBreakdown(salesMovs, state);
@@ -643,12 +642,12 @@ function SalesTabContent({ state, onNavigate }: { state: State; onNavigate: (s: 
           <span className="kpi-val" style={{ color: "var(--coral-600)" }}>{money(utilidadBruta)} ({margenBruto.toFixed(1)}%)</span>
         </div>
         <div className="party-kpi-card">
-          <span className="kpi-label">Ticket Promedio</span>
-          <span className="kpi-val" style={{ color: "var(--navy-900)" }}>{money(ticketPromedio)}</span>
+          <span className="kpi-label">Cuentas por Cobrar</span>
+          <span className="kpi-val" style={{ color: "var(--navy-900)" }}>{money(cuentasPorCobrar)}</span>
         </div>
         <div className="party-kpi-card">
-          <span className="kpi-label">Promedio por Cliente</span>
-          <span className="kpi-val" style={{ color: "var(--violet-600)" }}>{money(avgPerClient)}</span>
+          <span className="kpi-label">Cuentas por Pagar</span>
+          <span className="kpi-val" style={{ color: "var(--violet-600)" }}>{money(cuentasPorPagar)}</span>
         </div>
       </div>
 
@@ -879,22 +878,19 @@ function ProfitabilityTabContent({ state }: { state: State }) {
 
 function MonthlySummaryTabContent({ state }: { state: State }) {
   const monthsData = get12MonthsBreakdown(state.movements);
-  const currentMonth = monthsData[monthsData.length - 1] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, ticketPromedio: 0, label: "Actual" };
-  const prevMonth = monthsData[monthsData.length - 2] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, ticketPromedio: 0, label: "Anterior" };
-  const sameMonthLastYear = monthsData[0] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, ticketPromedio: 0, label: "Año Pasado" };
+  const currentMonth = monthsData[monthsData.length - 1] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, label: "Actual" };
+  const prevMonth = monthsData[monthsData.length - 2] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, label: "Anterior" };
+  const sameMonthLastYear = monthsData[0] || { ventas: 0, compras: 0, utilidad: 0, countVentas: 0, label: "Año Pasado" };
 
   const salesMoM = prevMonth.ventas > 0 ? ((currentMonth.ventas - prevMonth.ventas) / prevMonth.ventas) * 100 : 0;
   const salesYoY = sameMonthLastYear.ventas > 0 ? ((currentMonth.ventas - sameMonthLastYear.ventas) / sameMonthLastYear.ventas) * 100 : 0;
   const profitMoM = prevMonth.utilidad > 0 ? ((currentMonth.utilidad - prevMonth.utilidad) / prevMonth.utilidad) * 100 : 0;
-  const ticketMoM = prevMonth.ticketPromedio > 0 ? ((currentMonth.ticketPromedio - prevMonth.ticketPromedio) / prevMonth.ticketPromedio) * 100 : 0;
 
   const maxVal = Math.max(...monthsData.map((m) => Math.max(m.ventas, m.compras, m.utilidad)), 1);
 
-  const exportData = [
     { Indicador: "Total Ventas Facturadas", Current: money(currentMonth.ventas), Prev: money(prevMonth.ventas), MoM: `${salesMoM.toFixed(1)}%`, YoY: `${salesYoY.toFixed(1)}%` },
     { Indicador: "Total Compras Realizadas", Current: money(currentMonth.compras), Prev: money(prevMonth.compras), MoM: "—", YoY: "—" },
     { Indicador: "Utilidad Bruta Generada", Current: money(currentMonth.utilidad), Prev: money(prevMonth.utilidad), MoM: `${profitMoM.toFixed(1)}%`, YoY: "—" },
-    { Indicador: "Ticket Promedio por Venta", Current: money(currentMonth.ticketPromedio), Prev: money(prevMonth.ticketPromedio), MoM: `${ticketMoM.toFixed(1)}%`, YoY: "—" },
   ];
 
   return (
@@ -995,14 +991,6 @@ function MonthlySummaryTabContent({ state }: { state: State }) {
               <td>{money(prevMonth.utilidad)}</td>
               <td className="font-semibold" style={{ color: profitMoM >= 0 ? "var(--coral-600)" : "#ef4444" }}>{profitMoM >= 0 ? "+" : ""}{profitMoM.toFixed(1)}%</td>
               <td>{money(sameMonthLastYear.utilidad)}</td>
-              <td>—</td>
-            </tr>
-            <tr>
-              <td><strong>Ticket Promedio por Venta</strong></td>
-              <td className="font-semibold">{money(currentMonth.ticketPromedio)}</td>
-              <td>{money(prevMonth.ticketPromedio)}</td>
-              <td className="font-semibold">{ticketMoM >= 0 ? "+" : ""}{ticketMoM.toFixed(1)}%</td>
-              <td>{money(sameMonthLastYear.ticketPromedio)}</td>
               <td>—</td>
             </tr>
           </tbody>
