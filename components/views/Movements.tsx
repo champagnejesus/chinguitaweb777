@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Edit } from "lucide-react";
 import { State, Movement } from "../../lib/types";
-import { productName, partyName, buildMovementRows, money } from "../../lib/utils";
+import { productName, partyName, movementRows as buildMovementRows, money } from "../../lib/utils";
 import { SearchBar } from "../ui/SearchBar";
 import { ExportActions } from "../ui/ExportActions";
 import { DatePresetsToolbar } from "../ui/DatePresetsToolbar";
