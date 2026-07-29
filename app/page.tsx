@@ -2355,6 +2355,7 @@ function Accounts({
   state,
   onPay,
   onDeleteMovement,
+  onEditMovement,
 }: {
   kind: "Compra" | "Venta";
   state: State;
