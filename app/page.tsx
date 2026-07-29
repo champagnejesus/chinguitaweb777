@@ -334,9 +334,6 @@ function App() {
             />
             {active === "inventario" && (
               <>
-                <button className="secondary-button compact" onClick={() => setModal("AddProducto")}>
-                  <Plus />Producto
-                </button>
                 <button className="secondary-button compact" onClick={() => setModal("ImportCsv")}>
                   <Upload size={16} />Importar
                 </button>
