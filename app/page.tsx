@@ -705,18 +705,24 @@ function SalesTabContent({ state, onNavigate }: { state: State; onNavigate: (s: 
 
   return (
     <div>
-      <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ flex: 1, minWidth: 240 }}>
+      <div className="section-toolbar" style={{ margin: "0 0 20px" }}>
+        <div className="toolbar-group-left">
           <SearchBar value={search} onChange={setSearch} placeholder="Buscar venta por producto o cliente..." />
+          <label className="toolbar-select-pill">
+            <span>CATEGORÍA</span>
+            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+              <option value="todas">Todas</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} />
+          </label>
+          <DatePresetsToolbar startDate={startDate} endDate={endDate} onRangeChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
         </div>
-        <select className="toolbar-select" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-          <option value="todas">Todas las categorías</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <DatePresetsToolbar startDate={startDate} endDate={endDate} onRangeChange={(s, e) => { setStartDate(s); setEndDate(e); }} />
-        <ExportActions title="Detalle-Rendimiento-Ventas" rows={exportData} />
+        <div className="toolbar-group-right">
+          <ExportActions title="Detalle-Rendimiento-Ventas" rows={exportData} />
+        </div>
       </div>
 
       <div className="party-kpi-cards" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginBottom: 20 }}>
@@ -839,20 +845,30 @@ function ProfitabilityTabContent({ state }: { state: State }) {
 
   return (
     <div>
-      <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button className={`date-preset-pill ${marginFilter === "todos" ? "active" : ""}`} onClick={() => setMarginFilter("todos")}>Todos</button>
-          <button className={`date-preset-pill ${marginFilter === "alto" ? "active" : ""}`} onClick={() => setMarginFilter("alto")}>Alto (&gt;30%)</button>
-          <button className={`date-preset-pill ${marginFilter === "normal" ? "active" : ""}`} onClick={() => setMarginFilter("normal")}>Normal (15-30%)</button>
-          <button className={`date-preset-pill ${marginFilter === "riesgo" ? "active" : ""}`} onClick={() => setMarginFilter("riesgo")}>Riesgo (&lt;15%)</button>
+      <div className="section-toolbar" style={{ margin: "0 0 20px" }}>
+        <div className="toolbar-group-left">
+          <div className="toolbar-segmented-track">
+            <button className={`toolbar-segmented-item ${marginFilter === "todos" ? "active" : ""}`} onClick={() => setMarginFilter("todos")}>Todos</button>
+            <button className={`toolbar-segmented-item ${marginFilter === "alto" ? "active" : ""}`} onClick={() => setMarginFilter("alto")}>Alto (&gt;30%)</button>
+            <button className={`toolbar-segmented-item ${marginFilter === "normal" ? "active" : ""}`} onClick={() => setMarginFilter("normal")}>Normal (15-30%)</button>
+            <button className={`toolbar-segmented-item ${marginFilter === "riesgo" ? "active" : ""}`} onClick={() => setMarginFilter("riesgo")}>Riesgo (&lt;15%)</button>
+          </div>
+
+          <label className="toolbar-select-pill">
+            <span>CATEGORÍA</span>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <option value="todas">Todas</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} />
+          </label>
         </div>
-        <select className="toolbar-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-          <option value="todas">Todas las categorías</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <ExportActions title="Analisis-Rentabilidad-Margen" rows={exportData} />
+
+        <div className="toolbar-group-right">
+          <ExportActions title="Analisis-Rentabilidad-Margen" rows={exportData} />
+        </div>
       </div>
 
       <div className="party-kpi-cards" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginBottom: 20 }}>
@@ -979,12 +995,16 @@ function MonthlySummaryTabContent({ state }: { state: State }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-        <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--navy-900)" }}>Panel Comparativo Intermensual (12 Meses)</h3>
-          <p style={{ fontSize: 12, color: "var(--slate-500)", margin: "2px 0 0" }}>Tendencia de ventas, compras y utilidades acumuladas</p>
+      <div className="section-toolbar" style={{ margin: "0 0 20px" }}>
+        <div className="toolbar-group-left">
+          <div>
+            <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--navy-900)" }}>Panel Comparativo Intermensual (12 Meses)</h3>
+            <p style={{ fontSize: 12, color: "var(--slate-500)", margin: "2px 0 0" }}>Tendencia de ventas, compras y utilidades acumuladas</p>
+          </div>
         </div>
-        <ExportActions title="Resumen-Mensual-MoM-YoY" rows={exportData} />
+        <div className="toolbar-group-right">
+          <ExportActions title="Resumen-Mensual-MoM-YoY" rows={exportData} />
+        </div>
       </div>
 
       <div className="party-kpi-cards" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", marginBottom: 20 }}>
@@ -1581,27 +1601,27 @@ function Movements({
           <p className="eyebrow">DETALLE POR FECHAS</p>
           <h2>{kind}s registradas</h2>
         </div>
-        <div className="surface-actions">
+      </div>
+
+      <div className="section-toolbar">
+        <div className="toolbar-group-left">
+          <SearchBar value={search} onChange={setSearch} placeholder="Buscar por producto o persona..." />
+          <DatePresetsToolbar
+            startDate={startDate}
+            endDate={endDate}
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+        </div>
+        <div className="toolbar-group-right">
           <ExportActions title={`${kind}s`} rows={buildMovementRows(filteredRows, state, kind)} />
           <button className="primary-button compact" onClick={onNew}>
-            <Plus />
+            <Plus size={15} />
             Nueva {kind.toLowerCase()}
           </button>
         </div>
-      </div>
-
-      <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ flex: 1, minWidth: 260 }}>
-          <SearchBar value={search} onChange={setSearch} placeholder="Buscar por producto o persona..." />
-        </div>
-        <DatePresetsToolbar
-          startDate={startDate}
-          endDate={endDate}
-          onRangeChange={(start, end) => {
-            setStartDate(start);
-            setEndDate(end);
-          }}
-        />
       </div>
 
       <MovementTable rows={filteredRows} state={state} kind={kind} onDeleteMovement={onDeleteMovement} onEditMovement={onEditMovement} />
@@ -1811,23 +1831,21 @@ function Inventory({
 
   return (
     <section className="inventory-page">
-      <div className="inventory-toolbar">
+      <div className="surface-title">
         <div>
           <p className="eyebrow">CONTROL POR PRESENTACIÓN</p>
           <h2>{selectedProductId ? visibleStats[0]?.product.name : "Detalle completo de productos"}</h2>
-          <p>{selectedProductId ? "Ficha individual del producto seleccionado." : "Stock, costos, precios y rentabilidad real por unidad y por caja."}</p>
+          <p style={{ margin: "4px 0 0", color: "var(--slate-500)", fontSize: 13 }}>
+            {selectedProductId ? "Ficha individual del producto seleccionado." : "Stock, costos, precios y rentabilidad real por unidad y por caja."}
+          </p>
         </div>
-        <div className="inventory-actions">
-          {selectedProductId && (
-            <button className="secondary-button" onClick={() => onSelectProduct(null)}>
-              Ver todo el inventario
-            </button>
-          )}
-          <button className="secondary-button compact" onClick={onAddProduct}>
-            <Plus />
-            Producto
-          </button>
-          <label className="filter-select highlight-product-filter">
+      </div>
+
+      <div className="section-toolbar">
+        <div className="toolbar-group-left">
+          <SearchBar value={search} onChange={setSearch} placeholder="Filtrar productos..." />
+
+          <label className="toolbar-select-pill">
             <span>PRODUCTO</span>
             <select value={selectedProductId || "todas"} onChange={(e) => onSelectProduct(e.target.value === "todas" ? null : e.target.value)}>
               <option value="todas">Todos los productos</option>
@@ -1837,20 +1855,22 @@ function Inventory({
                 </option>
               ))}
             </select>
-            <ChevronDown />
+            <ChevronDown size={14} />
           </label>
-          <label className="filter-select">
-            <span>Ver presentación</span>
+
+          <label className="toolbar-select-pill">
+            <span>PRESENTACIÓN</span>
             <select value={filter} onChange={(e) => setFilter(e.target.value as "todas" | Presentation)}>
               <option value="todas">Todas</option>
               <option value="unidad">Por unidad</option>
               <option value="caja">Por caja</option>
             </select>
-            <ChevronDown />
+            <ChevronDown size={14} />
           </label>
+
           {categories.length > 0 && (
-            <label className="filter-select">
-              <span>Categoría</span>
+            <label className="toolbar-select-pill">
+              <span>CATEGORÍA</span>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="todas">Todas</option>
                 {categories.map((cat) => (
@@ -1859,15 +1879,23 @@ function Inventory({
                   </option>
                 ))}
               </select>
-              <ChevronDown />
+              <ChevronDown size={14} />
             </label>
           )}
-          <ExportActions title={selectedProductId ? `Inventario-${visibleStats[0]?.product.name}` : "Inventario-detallado"} rows={report} />
         </div>
-      </div>
 
-      <div className="search-bar-row mb-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Filtrar productos..." />
+        <div className="toolbar-group-right">
+          {selectedProductId && (
+            <button className="secondary-button compact" onClick={() => onSelectProduct(null)}>
+              Ver todo el inventario
+            </button>
+          )}
+          <ExportActions title={selectedProductId ? `Inventario-${visibleStats[0]?.product.name}` : "Inventario-detallado"} rows={report} />
+          <button className="primary-button compact" onClick={onAddProduct}>
+            <Plus size={15} />
+            Producto
+          </button>
+        </div>
       </div>
 
       <div className="inventory-kpis">
@@ -2266,17 +2294,19 @@ function Parties({
           <p className="eyebrow">DIRECTORIO</p>
           <h2>{kind}s registrados</h2>
         </div>
-        <div className="surface-actions">
-          <ExportActions title={`${kind}s`} rows={report} />
-          <button className="primary-button compact" onClick={onNew}>
-            <Plus />
-            Agregar
-          </button>
-        </div>
       </div>
 
-      <div className="search-bar-row mb-4">
-        <SearchBar value={search} onChange={setSearch} placeholder={`Buscar ${kind.toLowerCase()} por nombre o RUT...`} />
+      <div className="section-toolbar">
+        <div className="toolbar-group-left">
+          <SearchBar value={search} onChange={setSearch} placeholder={`Buscar ${kind.toLowerCase()} por nombre o RUT...`} />
+        </div>
+        <div className="toolbar-group-right">
+          <ExportActions title={`${kind}s`} rows={report} />
+          <button className="primary-button compact" onClick={onNew}>
+            <Plus size={15} />
+            Agregar {kind}
+          </button>
+        </div>
       </div>
 
       <div className="directory-grid">
@@ -2332,26 +2362,26 @@ function Accounts({
           <p className="eyebrow">PAGADOS Y PENDIENTES</p>
           <h2>{kind === "Venta" ? "Clientes pendientes de cobrar" : "Proveedores pendientes de pagar"}</h2>
         </div>
-        <div className="surface-actions">
+      </div>
+
+      <div className="section-toolbar">
+        <div className="toolbar-group-left">
+          <SearchBar value={search} onChange={setSearch} placeholder="Filtrar pendientes por producto o persona..." />
+          <DatePresetsToolbar
+            startDate={startDate}
+            endDate={endDate}
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+        </div>
+        <div className="toolbar-group-right">
           <ExportActions title={kind === "Venta" ? "Cuentas-por-cobrar" : "Cuentas-por-pagar"} rows={buildAccountRows(filteredRows, state, kind)} />
           <button className="primary-button compact" onClick={onPay}>
             Registrar abono
           </button>
         </div>
-      </div>
-
-      <div className="search-bar-row mb-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ flex: 1, minWidth: 260 }}>
-          <SearchBar value={search} onChange={setSearch} placeholder="Filtrar pendientes por producto o persona..." />
-        </div>
-        <DatePresetsToolbar
-          startDate={startDate}
-          endDate={endDate}
-          onRangeChange={(start, end) => {
-            setStartDate(start);
-            setEndDate(end);
-          }}
-        />
       </div>
 
       <AccountTable rows={filteredRows} state={state} kind={kind} onDeleteMovement={onDeleteMovement} />
@@ -2921,19 +2951,24 @@ function AuditLogs({
 
   return (
     <div className="surface" style={{ padding: 26, borderRadius: 22 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div className="surface-title" style={{ padding: "0 0 14px" }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Historial de Auditoría</h2>
-          <p style={{ color: "var(--slate-500)", fontSize: 13, margin: "4px 0 0 0" }}>Operaciones críticas registradas en la base de datos.</p>
+          <p className="eyebrow">REGISTRO DE SEGURIDAD</p>
+          <h2>Historial de Auditoría</h2>
+          <p style={{ color: "var(--slate-500)", fontSize: 13, margin: "4px 0 0" }}>Operaciones críticas registradas en la base de datos.</p>
         </div>
-        <button className="secondary-button compact" onClick={onReload} disabled={loading}>
-          {loading ? "Cargando..." : "Actualizar"}
-        </button>
       </div>
 
-      <div className="search-input-wrapper mb-4">
-        <Search size={18} />
-        <input type="text" placeholder="Buscar por usuario, acción o detalles..." value={query} onChange={(e) => setQuery(e.target.value)} />
+      <div className="section-toolbar" style={{ margin: "0 0 20px" }}>
+        <div className="toolbar-group-left">
+          <SearchBar value={query} onChange={setQuery} placeholder="Buscar por usuario, acción o detalles..." />
+        </div>
+        <div className="toolbar-group-right">
+          <button className="secondary-button compact" onClick={onReload} disabled={loading}>
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            {loading ? "Cargando..." : "Actualizar"}
+          </button>
+        </div>
       </div>
 
       <div className="responsive-table">
