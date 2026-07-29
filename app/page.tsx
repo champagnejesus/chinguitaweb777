@@ -481,7 +481,7 @@ function App() {
             <div style={{ color: "var(--coral-600)", marginBottom: 16 }}>
               <AlertTriangle size={48} style={{ margin: "0 auto" }} />
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: "var(--navy-950)" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "var(--navy-900)" }}>
               ¡Conflicto de Concurrencia!
             </h3>
             <p style={{ color: "var(--slate-600)", fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
@@ -891,7 +891,7 @@ function ProfitabilityTabContent({ state }: { state: State }) {
       </div>
 
       <div className="waterfall-card">
-        <h4 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 800, color: "var(--navy-900)" }}>
+        <h4 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 600, color: "var(--navy-900)" }}>
           Gráfico en Cascada (Waterfall): Flujo de Ingresos a Utilidad Bruta
         </h4>
         <div className="waterfall-bars">
@@ -920,7 +920,7 @@ function ProfitabilityTabContent({ state }: { state: State }) {
 
       {heatmapData.length > 0 && (
         <div style={{ marginBottom: 24, background: "var(--ice-50)", padding: 18, borderRadius: 16, border: "1px solid var(--ice-200)" }}>
-          <h4 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 800, color: "var(--navy-900)" }}>Matriz Heatmap de Rentabilidad por Categoría</h4>
+          <h4 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 600, color: "var(--navy-900)" }}>Matriz Heatmap de Rentabilidad por Categoría</h4>
           <div className="heatmap-grid">
             {heatmapData.map((h) => (
               <div key={h.category} className={`heatmap-cell ${h.margin >= 30 ? "high" : h.margin >= 15 ? "mid" : "low"}`}>
@@ -1027,7 +1027,7 @@ function MonthlySummaryTabContent({ state }: { state: State }) {
       </div>
 
       <div className="waterfall-card" style={{ marginBottom: 24 }}>
-        <h4 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 800, color: "var(--navy-900)" }}>
+        <h4 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 600, color: "var(--navy-900)" }}>
           Evolución Mensual de Operaciones (Últimos 12 Meses)
         </h4>
         <div className="waterfall-bars" style={{ height: 220 }}>
@@ -2151,7 +2151,7 @@ function PartyProfileModal({
                 {party.name.slice(0, 2).toUpperCase()}
               </span>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: "var(--navy-900)" }}>{party.name}</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: "var(--navy-900)" }}>{party.name}</h2>
                 <p style={{ color: "var(--slate-500)", fontSize: 12, margin: "2px 0 0" }}>
                   RUT {party.rut || "Sin RUT"} · {party.phone || "Sin teléfono"} · {kind}
                 </p>
@@ -2203,7 +2203,7 @@ function PartyProfileModal({
         )}
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--navy-900)" }}>Historial de Transacciones ({partyMovements.length})</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--navy-900)" }}>Historial de Transacciones ({partyMovements.length})</h3>
           <ExportActions title={`Ficha-${party.name}`} rows={report} />
         </div>
 
