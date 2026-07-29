@@ -366,6 +366,7 @@ function App() {
             onSelectProduct={setInventoryProductId}
             onEditProduct={(p) => { setSelectedItem(p); setModal("EditProducto"); }}
             onDeleteMovement={deleteMovement}
+            onEditMovement={(m) => { setSelectedItem(m); setModal("EditMovimiento"); }}
             globalSearch={globalSearch}
             onAddProduct={() => setModal("AddProducto")}
           />
@@ -386,6 +387,7 @@ function App() {
             state={state}
             onPay={() => setModal("Pago")}
             onDeleteMovement={deleteMovement}
+            onEditMovement={(m) => { setSelectedItem(m); setModal("EditMovimiento"); }}
           />
         )}
         {active === "auditoria" && (
@@ -457,6 +459,11 @@ function App() {
             deleteParty(partyId, selectedParty.kind);
           }}
           onDeleteMovement={deleteMovement}
+          onEditMovement={(m) => {
+            setSelectedParty(null);
+            setSelectedItem(m);
+            setModal("EditMovimiento");
+          }}
         />
       )}
 
@@ -1676,12 +1683,14 @@ function MovementTable({
                 <span className={`status ${m.total - m.paid <= 0 ? "paid" : "pending"}`}>{money(m.total - m.paid)}</span>
               </td>
               <td data-label="Acciones" style={{ whiteSpace: "nowrap" }}>
-                <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
-                  <Trash2 size={16} />
-                </button>
-                <button className="text-button edit-link" onClick={() => onEditMovement(m)} title="Editar">
-                  editar
-                </button>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
+                    <Trash2 size={16} />
+                  </button>
+                  <button className="icon-button" onClick={() => onEditMovement(m)} title="Editar">
+                    <Edit size={16} />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -1704,6 +1713,7 @@ function Inventory({
   onSelectProduct,
   onEditProduct,
   onDeleteMovement,
+  onEditMovement,
   globalSearch,
   onAddProduct,
 }: {
@@ -1712,6 +1722,7 @@ function Inventory({
   onSelectProduct: (id: string | null) => void;
   onEditProduct: (p: Product) => void;
   onDeleteMovement: (id: string) => void;
+  onEditMovement: (m: Movement) => void;
   globalSearch: string;
   onAddProduct: () => void;
 }) {
@@ -2008,9 +2019,14 @@ function Inventory({
                     <strong>{stockCj}</strong>
                   </td>
                   <td data-label="Acciones">
-                    <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
-                      <Trash2 size={16} />
-                    </button>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
+                        <Trash2 size={16} />
+                      </button>
+                      <button className="icon-button" onClick={() => onEditMovement(m)} title="Editar">
+                        <Edit size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -2104,6 +2120,7 @@ function PartyProfileModal({
   onEdit,
   onDelete,
   onDeleteMovement,
+  onEditMovement,
 }: {
   party: Party;
   kind: "Cliente" | "Proveedor";
@@ -2112,6 +2129,7 @@ function PartyProfileModal({
   onEdit: (party: Party) => void;
   onDelete: (partyId: string) => void;
   onDeleteMovement: (id: string) => void;
+  onEditMovement: (m: Movement) => void;
 }) {
   const partyMovements = state.movements.filter((m) => m.partyId === party.id);
   const totalAmount = partyMovements.reduce((s, m) => s + m.total, 0);
@@ -2244,9 +2262,14 @@ function PartyProfileModal({
                       <span className={`status ${m.total - m.paid <= 0 ? "paid" : "pending"}`}>{money(m.total - m.paid)}</span>
                     </td>
                     <td data-label="Acción">
-                      <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
-                        <Trash2 size={15} />
-                      </button>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
+                          <Trash2 size={15} />
+                        </button>
+                        <button className="icon-button" onClick={() => onEditMovement(m)} title="Editar">
+                          <Edit size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -2337,6 +2360,7 @@ function Accounts({
   state: State;
   onPay: () => void;
   onDeleteMovement: (id: string) => void;
+  onEditMovement: (m: Movement) => void;
 }) {
   const rows = state.movements.filter((m) => m.kind === kind && m.total > m.paid);
   const [search, setSearch] = useState("");
@@ -2436,9 +2460,14 @@ function AccountTable({
               </td>
               <td data-label="Usuario">{m.user}</td>
               <td data-label="Acciones">
-                <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
-                  <Trash2 size={16} />
-                </button>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button className="icon-button danger-icon-button" onClick={() => onDeleteMovement(m.id)} title="Eliminar">
+                    <Trash2 size={16} />
+                  </button>
+                  <button className="icon-button" onClick={() => onEditMovement(m)} title="Editar">
+                    <Edit size={16} />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
