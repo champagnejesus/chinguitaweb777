@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Upload, ChevronDown, FileSpreadsheet, Printer } from "lucide-react";
-import { exportExcel, exportPdf } from "../../../lib/utils";
-import { ExportRow } from "../../../lib/types";
+import { exportExcel, exportPdf } from "../../lib/utils";
+import { ExportRow } from "../../lib/types";
 
 export function ExportActions({ title, rows }: { title: string; rows: ExportRow[] }) {
   const [open, setOpen] = useState(false);
