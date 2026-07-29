@@ -374,7 +374,7 @@ function App() {
           />
         )}
         {(active === "clientes" || active === "proveedores") && (
-          <Directory
+          <Parties
             kind={active === "clientes" ? "Cliente" : "Proveedor"}
             rows={active === "clientes" ? state.clients : state.providers}
             onNew={() => setModal(active === "clientes" ? "Cliente" : "Proveedor")}
@@ -450,6 +450,15 @@ function App() {
           kind={selectedParty.kind}
           state={state}
           onClose={() => setSelectedParty(null)}
+          onEdit={(party) => {
+            setSelectedParty(null);
+            setSelectedItem(party);
+            setModal(selectedParty.kind === "Cliente" ? "EditCliente" : "EditProveedor");
+          }}
+          onDelete={(partyId) => {
+            setSelectedParty(null);
+            deleteParty(partyId, selectedParty.kind);
+          }}
           onDeleteMovement={deleteMovement}
         />
       )}
@@ -1981,12 +1990,16 @@ function PartyProfileModal({
   kind,
   state,
   onClose,
+  onEdit,
+  onDelete,
   onDeleteMovement,
 }: {
   party: Party;
   kind: "Cliente" | "Proveedor";
   state: State;
   onClose: () => void;
+  onEdit: (party: Party) => void;
+  onDelete: (partyId: string) => void;
   onDeleteMovement: (id: string) => void;
 }) {
   const partyMovements = state.movements.filter((m) => m.partyId === party.id);
@@ -2031,10 +2044,16 @@ function PartyProfileModal({
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <span className={`badge-debt ${pendingBalance > 0 ? "pending" : "ok"}`}>
               {pendingBalance > 0 ? `Saldo Pendiente: ${money(pendingBalance)}` : "✔ Al día sin deuda"}
             </span>
+            <button className="secondary-button compact" onClick={() => { onClose(); onEdit(party); }} title={`Editar ${kind}`}>
+              <Edit size={14} /> Editar
+            </button>
+            <button className="secondary-button compact danger-text" onClick={() => { onClose(); onDelete(party.id); }} title={`Eliminar ${kind}`}>
+              <Trash2 size={14} /> Eliminar
+            </button>
             <button className="icon-button" onClick={onClose}>
               <X size={18} />
             </button>
@@ -2135,7 +2154,7 @@ function PartyProfileModal({
   );
 }
 
-function Directory({
+function Parties({
   kind,
   rows,
   onNew,
@@ -2176,25 +2195,17 @@ function Directory({
 
       <div className="directory-grid">
         {filteredRows.map((r) => (
-          <article className="directory-card" key={r.id}>
+          <article className="directory-card directory-card-clickable" key={r.id} onClick={() => onViewProfile(r)}>
             <span className="directory-avatar">{r.name.slice(0, 2).toUpperCase()}</span>
-            <div>
+            <div style={{ flex: 1 }}>
               <strong>{r.name}</strong>
               <small>
                 RUT {r.rut || "Sin RUT"} · {r.phone || "Sin teléfono"}
               </small>
             </div>
-            <div className="directory-actions-mini mt-2" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <button className="text-button compact-btn" onClick={() => onViewProfile(r)} style={{ color: "var(--teal-700)", fontWeight: 700 }}>
-                <Eye size={14} /> Ficha / Historial
-              </button>
-              <button className="text-button compact-btn" onClick={() => onEdit(r)}>
-                <Edit size={14} /> Editar
-              </button>
-              <button className="text-button compact-btn coral-text" onClick={() => onDelete(r.id)}>
-                <Trash2 size={14} /> Eliminar
-              </button>
-            </div>
+            <span className="directory-card-badge">
+              Ficha / Historial →
+            </span>
           </article>
         ))}
         {!filteredRows.length && <p className="empty-state">Aún no hay registros que coincidan.</p>}
