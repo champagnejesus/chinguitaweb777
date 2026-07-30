@@ -186,6 +186,64 @@ select:focus-visible {
   border-color: var(--slate-600);
 }
 
+.dark .inventory-toolbar,
+.dark .inventory-kpis article {
+  background: rgba(11, 15, 25, 0.9);
+}
+
+.dark .inventory-kpi-icon.blue {
+  background: var(--ice-100);
+  color: var(--teal-500);
+}
+
+.dark .inventory-ledger {
+  background: rgba(11, 15, 25, 0.92);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dark .inventory-product {
+  background: rgba(11, 15, 25, 0.94);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dark .inventory-product[role="button"]:hover {
+  border-color: rgba(52, 211, 153, 0.35);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.4);
+}
+
+.dark .inventory-product[role="button"]:focus-visible {
+  outline-color: rgba(52, 211, 153, 0.4);
+}
+
+.dark .selected-product {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.dark .inventory-link {
+  border-top-color: var(--ice-200);
+  background: var(--ice-50);
+}
+
+.dark .inventory-product-link {
+  text-decoration-color: rgba(56, 189, 248, 0.35);
+}
+
+.dark .stock-alert {
+  border-top-color: var(--ice-200);
+}
+
+.dark .stock-alert:hover {
+  background: var(--ice-50);
+}
+
+.dark .stock-alert > span:last-child {
+  border-color: var(--coral-600);
+}
+
+.dark .filter-select select {
+  background: var(--ice-50);
+}
+
 .sidebar-top {
   display: flex;
   align-items: center;
