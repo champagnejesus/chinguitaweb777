@@ -670,15 +670,15 @@ function SalesTabContent({ state, onNavigate }: { state: State; onNavigate: (s: 
           <tbody>
             {productPerformance.map((item) => (
               <tr key={item.product.id}>
-                <td><strong>{item.product.name}</strong></td>
-                <td>{item.product.category || "—"}</td>
-                <td className="text-right">{item.qtyUnits}</td>
-                <td className="text-right">{item.qtyBoxes}</td>
-                <td className="text-right">{money(item.avgPrice)}</td>
-                <td className="text-right font-semibold" style={{ color: "#1e8e3e" }}>{money(item.totalSales)}</td>
-                <td className="text-right">{money(item.totalCost)}</td>
-                <td className="text-right font-semibold" style={{ color: "var(--coral-600)" }}>{money(item.profit)}</td>
-                <td className="text-right font-semibold" style={{ color: item.marginPercent >= 20 ? "#15803d" : "#dc2626" }}>
+                <td data-label="Producto"><strong>{item.product.name}</strong></td>
+                <td data-label="Categoría">{item.product.category || "—"}</td>
+                <td data-label="Unidades vendidas" className="text-right">{item.qtyUnits}</td>
+                <td data-label="Cajas vendidas" className="text-right">{item.qtyBoxes}</td>
+                <td data-label="Precio promedio" className="text-right">{money(item.avgPrice)}</td>
+                <td data-label="Total ventas" className="text-right font-semibold" style={{ color: "#1e8e3e" }}>{money(item.totalSales)}</td>
+                <td data-label="Costo total" className="text-right">{money(item.totalCost)}</td>
+                <td data-label="Utilidad generada" className="text-right font-semibold" style={{ color: "var(--coral-600)" }}>{money(item.profit)}</td>
+                <td data-label="Margen de ganancia" className="text-right font-semibold" style={{ color: item.marginPercent >= 20 ? "#15803d" : "#dc2626" }}>
                   {item.marginPercent.toFixed(1)}%
                 </td>
               </tr>

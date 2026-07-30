@@ -2682,8 +2682,9 @@ td small {
   }
 
   .product-performance-table td::before {
-    font-size: 9px;
-    margin-bottom: 1px;
+    font-size: 10px;
+    margin-bottom: 2px;
+    color: var(--slate-500) !important;
   }
 
   .product-performance-table td:first-child {
