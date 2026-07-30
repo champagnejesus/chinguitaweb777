@@ -652,7 +652,7 @@ function SalesTabContent({ state, onNavigate }: { state: State; onNavigate: (s: 
       </div>
 
       <h3 className="operations-table-title" style={{ marginBottom: 12 }}>Detalle de Rendimiento de Ventas por Producto</h3>
-      <div className="responsive-table">
+      <div className="responsive-table product-performance-table">
         <table>
           <thead>
             <tr>
