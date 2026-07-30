@@ -148,6 +148,24 @@ select:focus-visible {
   color: #34d399 !important;
 }
 
+.dark .directory-card {
+  border-color: var(--ice-200);
+}
+
+.dark .directory-card-badge {
+  color: var(--teal-500);
+}
+
+.dark .badge-debt.pending {
+  background: var(--coral-100);
+  color: var(--coral-500);
+}
+
+.dark .badge-debt.ok {
+  background: var(--emerald-100);
+  color: var(--emerald-600);
+}
+
 .sidebar-top {
   display: flex;
   align-items: center;
