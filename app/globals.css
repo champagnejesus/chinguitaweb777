@@ -166,6 +166,26 @@ select:focus-visible {
   color: var(--emerald-600);
 }
 
+.dark .primary-button {
+  background: var(--ice-200);
+  color: #fff;
+}
+
+.dark .primary-button:hover {
+  background: var(--slate-600);
+}
+
+.dark .secondary-button {
+  background: var(--ice-100);
+  border-color: var(--ice-200);
+  color: var(--navy-900);
+}
+
+.dark .secondary-button:hover {
+  background: var(--ice-200);
+  border-color: var(--slate-600);
+}
+
 .sidebar-top {
   display: flex;
   align-items: center;
