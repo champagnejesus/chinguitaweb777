@@ -137,6 +137,17 @@ select:focus-visible {
   background: rgba(11, 15, 25, 0.9);
 }
 
+.dark .avatar,
+.dark .directory-avatar {
+  background: var(--ice-100);
+  color: #fff;
+}
+
+.dark .kpi-trend {
+  background: rgba(52, 211, 153, 0.12) !important;
+  color: #34d399 !important;
+}
+
 .sidebar-top {
   display: flex;
   align-items: center;
